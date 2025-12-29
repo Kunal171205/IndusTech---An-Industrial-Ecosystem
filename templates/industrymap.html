@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech | Industrial Map</title>
+    <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/industrymap.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="logo">
+          <i class="fa-solid fa-industry"></i>
+          <div>
+            <strong>IndusTech</strong><br>
+            <small>Industrial Ecosystem</small>
+          </div>
+        </div>
+      
+        <nav class="nav-links">
+          <a href="{{ url_for('home') }}" > <i class="fa-solid fa-house"></i> Home</a>
+          <a href="{{url_for('industrymap') }}" class="active"> <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+          <a href="{{url_for('jobportal') }}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+          <a href="{{url_for('trade')}}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+        </nav>
+      
+        <div class="auth">
+            <a href ="{{url_for('login')}}" class="login">Login</a>
+            <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
+          </div>
+        </div>
+      </header>
+
+
+    <main class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="search-box">
+                        <input id="search-box" type="text" placeholder="Search location..." value="{{ search_query }}">
+                    
+                </div>
+            </div>
+
+
+            <div class="filter-section">
+                <h3><i class="fa-solid fa-filter"></i> Industry Type</h3>
+                <div class="filter-tags">
+                    <span class="tag"><i class="fa-solid fa-circle red"></i> Manufacturing</span>
+                    <span class="tag"><i class="fa-solid fa-circle green"></i> Textile</span>
+                    <span class="tag"><i class="fa-solid fa-circle blue"></i> Pharmaceuticals</span>
+                    <span class="tag"><i class="fa-solid fa-circle yellow"></i> Construction</span>
+                    <span class="tag"><i class="fa-solid fa-circle purple"></i> Chemical</span>
+                    <span class="tag"><i class="fa-solid fa-circle orange"></i> Food Processing</span>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3><i class="fa-solid fa-location-arrow"></i> Search Radius</h3>
+                <div class="radius-btns">
+                    <button>1 km</button>
+                    <button>5 km</button>
+                    <button class="active">10 km</button>
+                    <button>20 km</button>
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div class="results-header">
+                    <span><strong>6 Industries Found</strong></span>
+                    <a href="#" class="clear-filters">Clear filters</a>
+                </div>
+                
+                <div class="industry-list">
+                    <div class="industry-card">
+                        <div class="industry-icon bg-red"><i class="fa-solid fa-industry"></i></div>
+                        <div class="industry-info">
+                            <h4>ABC Manufacturing Pvt Ltd</h4>
+                            <p class="category">Manufacturing</p>
+                            <p class="location"><i class="fa-solid fa-location-dot"></i> MIDC Pune <span class="rating"><i class="fa-solid fa-star"></i> 4.5</span></p>
+                            <span class="verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
+                        </div>
+                    </div>
+                    
+                    <div class="industry-card">
+                        <div class="industry-icon bg-green"><i class="fa-solid fa-industry"></i></div>
+                        <div class="industry-info">
+                            <h4>XYZ Textiles</h4>
+                            <p class="category">Textile</p>
+                            <p class="location"><i class="fa-solid fa-location-dot"></i> MIDC Aurangabad <span class="rating"><i class="fa-solid fa-star"></i> 4.2</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="map-view">
+            <div id="map"></div>
+
+            <button class="gps-btn"><i class="fa-solid fa-location-arrow"></i></button>
+        </section>
+    </main>
+<!-- 
+    <script>
+        // Make filter tags clickable
+        const filterTags = document.querySelectorAll('.tag');
+        filterTags.forEach(tag => {
+            tag.addEventListener('click', function() {
+                this.classList.toggle('active');
+                // Here you would filter the industries based on the tag
+                console.log('Filter clicked:', this.textContent.trim());
+            });
+        });
+
+        // Make radius buttons clickable
+        const radiusBtns = document.querySelectorAll('.radius-btns button');
+        radiusBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                radiusBtns.forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                console.log('Radius changed to:', this.textContent);
+            });
+        });
+
+        // Make industry cards clickable
+        const industryCards = document.querySelectorAll('.industry-card');
+        industryCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // Here you would show details or highlight on map
+                alert('Industry selected: ' + this.querySelector('h4').textContent);
+            });
+        });
+
+        // Make GPS button clickable
+        const gpsBtn = document.querySelector('.gps-btn');
+        gpsBtn.addEventListener('click', function() {
+            // Here you would get current location
+            alert('Getting current location...');
+        });
+
+        // Make clear filters clickable
+        const clearFilters = document.querySelector('.clear-filters');
+        clearFilters.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Clear all active filters
+            filterTags.forEach(tag => tag.classList.remove('active'));
+            radiusBtns.forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.radius-btns button:nth-child(3)').classList.add('active'); // Reset to 10km
+            console.log('Filters cleared');
+        });
+    </script> -->
+ 
+    <script>
+        const HOME_SEARCH_QUERY = "{{ search_query }}";
+    </script>
+      
+      
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+    window.addEventListener('load', function () {
+    const script = document.createElement('script');
+    script.src =
+      'https://maps.googleapis.com/maps/api/js?key=AIzaSyAY3_ORuFPOhyOhMs2oFLGq9XzOJmxMGY4&callback=initMap&libraries=places,geometry,directions';
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+});
+</script>
+</body>
+</html>

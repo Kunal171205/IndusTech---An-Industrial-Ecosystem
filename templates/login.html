@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-industry"></i>
+      <div>
+        <strong>IndusTech</strong><br>
+        <small>Industrial Ecosystem</small>
+      </div>
+    </div>
+  
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}" class="active"> <i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+      <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+      <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+    </nav>
+  
+    <div class="auth">
+      <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+      <a href ="{{url_for('login')}}" class="signup">Login/Sign Up</a>
+    </div>
+  </header>
+
+  
+    <div class="hero-container">
+        <div class="form-side">
+            <div class="form-header">
+                <h1>Welcome back</h1>
+                <p>Sign in to your IndusTech account</p>
+            </div>
+
+            <form>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" placeholder="Enter your password" required>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox">
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login-main">Sign In</button>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <button type="button" class="btn-google">
+                    <i class="fab fa-google"></i>
+                    Continue with Google
+                </button>
+
+                <p class="signup-link">Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
+            </form>
+        </div>
+
+        <div class="image-side">
+            <div class="image-content">
+                <h2>Connect with India's Industrial Ecosystem</h2>
+                <p>Access thousands of job opportunities, discover industries, and trade with confidence on IndusTech.</p>
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Find Jobs</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-industry"></i>
+                        <span>Explore Industries</span>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-handshake"></i>
+                        <span>B2B Trading</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form validation and enhanced interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const emailInput = document.querySelector('input[type="email"]');
+            const passwordInput = document.querySelector('input[type="password"]');
+            const loginBtn = document.querySelector('.btn-login-main');
+            const googleBtn = document.querySelector('.btn-google');
+
+            // Real-time validation
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+
+            function validatePassword(password) {
+                return password.length >= 6;
+            }
+
+            function updateInputValidation(input, isValid) {
+                input.style.borderColor = isValid ? '#10b981' : '#ef4444';
+                input.style.boxShadow = isValid
+                    ? '0 0 0 3px rgba(16, 185, 129, 0.1)'
+                    : '0 0 0 3px rgba(239, 68, 68, 0.1)';
+            }
+
+            // Email validation
+            emailInput.addEventListener('blur', function() {
+                if (this.value) {
+                    const isValid = validateEmail(this.value);
+                    updateInputValidation(this, isValid);
+                }
+            });
+
+            // Password validation
+            passwordInput.addEventListener('blur', function() {
+                if (this.value) {
+                    const isValid = validatePassword(this.value);
+                    updateInputValidation(this, isValid);
+                }
+            });
+
+            // Clear validation on focus
+            [emailInput, passwordInput].forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.style.borderColor = '#0a438b';
+                    this.style.boxShadow = '0 0 0 3px rgba(10, 67, 139, 0.1)';
+                });
+            });
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const email = emailInput.value;
+                const password = passwordInput.value;
+                let isValid = true;
+
+                // Validate all fields
+                if (!validateEmail(email)) {
+                    updateInputValidation(emailInput, false);
+                    isValid = false;
+                }
+
+                if (!validatePassword(password)) {
+                    updateInputValidation(passwordInput, false);
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Simulate login process
+                    loginBtn.textContent = 'Signing In...';
+                    loginBtn.disabled = true;
+
+                    setTimeout(() => {
+                        // Redirect to home page (you can change this)
+                        window.location.href = 'home.html';
+                    }, 1500);
+                }
+            });
+
+            // Google sign-in simulation
+            googleBtn.addEventListener('click', function() {
+                this.innerHTML = '<i class="fab fa-google"></i> Connecting...';
+                this.disabled = true;
+
+                setTimeout(() => {
+                    // Simulate Google OAuth redirect
+                    window.location.href = 'home.html';
+                }, 1500);
+            });
+
+            // Smooth scroll reveal animation
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe form elements for reveal animation
+            const formElements = document.querySelectorAll('.input-group, .form-options, .btn-login-main, .divider, .btn-google, .signup-link');
+            formElements.forEach((element, index) => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                element.style.transition = `all 0.6s ease ${index * 0.1}s`;
+                observer.observe(element);
+            });
+
+            // Add loading state to buttons on click
+            document.querySelectorAll('.btn-login-main, .btn-google').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+
+            // Enhanced focus states for accessibility
+            document.querySelectorAll('input, button, a').forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.style.outline = '2px solid #0a438b';
+                    this.style.outlineOffset = '2px';
+                });
+
+                element.addEventListener('blur', function() {
+                    this.style.outline = '';
+                    this.style.outlineOffset = '';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

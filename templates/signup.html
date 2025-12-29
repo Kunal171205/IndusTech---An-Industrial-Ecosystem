@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech - Create Account</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-industry"></i>
+      <div>
+        <strong>IndusTech</strong><br>
+        <small>Industrial Ecosystem</small>
+      </div>
+    </div>
+  
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}" class="active"> <i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+      <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+      <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+    </nav>
+  
+    <div class="auth">
+      <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+      <a href ="{{url_for('login')}}" class="signup">Login/Sign Up</a>
+    </div>
+</header>
+
+    <div class="hero-container">
+        <div class="form-side">
+            <div class="form-header">
+                <h1>Create an account</h1>
+                <p>Join thousands of workers and companies on IndusTech</p>
+            </div>
+
+            <div class="role-selector">
+                <div class="role-card active" data-role="worker">
+                    <i class="fas fa-hard-hat"></i>
+                    <h3>Worker</h3>
+                    <p>Find jobs</p>
+                </div>
+            
+                <div class="role-card" data-role="company">
+                    <i class="fas fa-building"></i>
+                    <h3>Company</h3>
+                    <p>Hire workers</p>
+                </div>
+            </div>
+            
+            <!--worker signup-->
+            <form method="POST" action="/signup/worker" id="workerForm">
+
+                <!-- <div class="input-field">
+                    <label>Full Name</label>
+                    <input type="text" name="full_name" required>
+                </div> -->
+            
+                <div class="input-group"> 
+                    <label>Full Name</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-user"></i> 
+                        <input type="text" name="full_name" placeholder="Enter your full name"> 
+                    </div> 
+                </div>
+
+                <div class="input-group"> 
+                    <label>Phone Number</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-phone-alt"></i> 
+                        <input type="tel" name="phone" placeholder="Enter your phone number"> 
+                    </div> 
+                </div>
+            
+                <div class="input-group"> 
+                    <label>Password</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-lock"></i> 
+                        <input type="text" name="password" placeholder="Enter your password"> 
+                    </div> 
+                </div>
+            
+                <button class="btn-login-main" type="submit">Create Worker Account →</button>
+            </form>
+            
+            <!--company singup-->
+            <form method="POST" action="/signup/company" id="companyForm" style="display:none;">
+                
+                <div class="input-group"> 
+                    <label>Full Name</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-user"></i> 
+                        <input type="text" name="company_name" placeholder="Enter your full name"> 
+                    </div> 
+                </div>
+
+
+                <div class="input-group"> 
+                    <label>Mail</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-lock"></i> 
+                        <input type="text" name="email" placeholder="Enter Company Mail"> 
+                    </div> 
+                </div>
+            
+                <div class="input-group"> 
+                    <label>Password</label> 
+                    <div class="input-field"> 
+                        <i class="fas fa-lock"></i> 
+                        <input type="text" name="password" placeholder="Enter your password"> 
+                    </div> 
+                </div>
+            
+                <button class="btn-login-main" type="submit">Create Worker Account →</button>
+            </form>
+            
+
+            <p class="login-link">Already have an account? <a href="login.html">Login</a></p>
+        </div>
+
+        <div class="info-side">
+            <div class="info-content">
+                <div class="info-icon">
+                    <i class="fas fa-industry"></i>
+                </div>
+                <h2>India's Industrial Ecosystem</h2>
+                <p>Connect with industries, find jobs, and trade raw materials — all in one platform.</p>
+                
+                <ul class="check-list">
+                    <li><i class="far fa-check-circle"></i> 500+ industries mapped</li>
+                    <li><i class="far fa-check-circle"></i> 10,000+ registered workers</li>
+                    <li><i class="far fa-check-circle"></i> Verified companies only</li>
+                    <li><i class="far fa-check-circle"></i> Simple OTP-based login</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <section class="details-section">
+        <h2>Why Choose IndusTech?</h2>
+        <div class="grid">
+            <div class="card">
+                <i class="fas fa-shield-alt" style="font-size: 30px; color: var(--primary-blue);"></i>
+                <h3 style="margin-top:15px">Verified Listings</h3>
+                <p style="margin-top:10px; color: #64748b;">Every company and worker profile is verified by our team.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-bolt" style="font-size: 30px; color: var(--primary-blue);"></i>
+                <h3 style="margin-top:15px">Quick Matching</h3>
+                <p style="margin-top:10px; color: #64748b;">Our AI matches the right skill set with the right job in seconds.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-chart-line" style="font-size: 30px; color: var(--primary-blue);"></i>
+                <h3 style="margin-top:15px">B2B Growth</h3>
+                <p style="margin-top:10px; color: #64748b;">Trade raw materials directly with verified industrial suppliers.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Role toggle (unchanged)
+        const roleCards = document.querySelectorAll('.role-card');
+        const workerForm = document.getElementById("workerForm");
+        const companyForm = document.getElementById("companyForm");
+    
+        roleCards.forEach(card => {
+            card.addEventListener('click', function() {
+                roleCards.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+    
+                // toggle forms
+                if (this.dataset.role === "worker") {
+                    workerForm.style.display = "block";
+                    companyForm.style.display = "none";
+                } else {
+                    workerForm.style.display = "none";
+                    companyForm.style.display = "block";
+                }
+            });
+        });
+    
+        // Worker form validation
+        workerForm.addEventListener('submit', function(e) {
+    
+            const fullName = workerForm.querySelector('input[name="full_name"]').value.trim();
+            const phoneNumber = workerForm.querySelector('input[name="phone"]').value.trim();
+    
+            if (!fullName) {
+                e.preventDefault();
+                alert('Please enter your full name');
+                return;
+            }
+    
+            if (!phoneNumber) {
+                e.preventDefault();
+                alert('Please enter your phone number');
+                return;
+            }
+    
+            const phoneRegex = /^[6-9]\d{9}$/;
+            if (!phoneRegex.test(phoneNumber)) {
+                e.preventDefault();
+                alert('Please enter a valid 10-digit phone number starting with 6-9');
+                return;
+            }
+    
+            // ✅ NO preventDefault → form submits to Flask
+        });
+    </script>
+
+</body>
+</html>

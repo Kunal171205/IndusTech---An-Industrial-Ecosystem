@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IndusTech | Industrial Ecosystem</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}" class="active"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+    <a href ="{{url_for('login')}}" class="signup">Login/Sign Up</a>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+    <div class="badge">🌐 Industrial Ecosystem Platform</div>
+
+  <h1>
+    Discover Industries.
+    <span href="{{ url_for('jobportal') }}" class="blue">Find Jobs.</span>
+    <span href="{{ url_for('trade') }}" class="orange">Trade Smart.</span>
+  </h1>
+
+  <p class="hero-desc">
+    Connect with 500+ industries, find jobs near you, and trade raw materials —
+    all in one unified platform built for India’s industrial ecosystem.
+  </p>
+
+  <div class="search-box">
+    <div class="search-input">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          id="search-box"  
+          type="text"
+          placeholder="Search industries, jobs, or products..."
+        >
+      </div>
+      <button class="search-btn" onclick="goToIndustryMap()">
+        <i class="fa-solid fa-location-dot"></i> Find Industries
+      </button>
+  </div>
+
+  <div class="hero-actions">
+    <a class="btn-jobs"> <i class="fa-solid fa-briefcase"></i>  Find Jobs</a>
+    <a class="btn-trade"> <i class="fa-solid fa-box"></i>   Trade Portal</a>
+  </div>
+
+</section>
+
+<!-- ================= STATS ================= -->    
+<div class="stats-bar ">
+        <div class="stat-item ">
+            <i class="fa-solid fa-industry"></i>
+            <h2>500+</h2>
+            <p>Industries Listed</p>
+        </div>
+    <div class="stat-item">
+            <i class="fa-solid fa-users"></i>
+            <h2>10K+</h2>
+            <p>Workers Registered</p>
+        </div>
+        <div class="stat-item">
+            <i class="fa-solid fa-box-open"></i>
+            <h2>5K+</h2>
+            <p>Products Available</p>
+        </div>
+        <div class="stat-item">
+            <i class="fa-solid fa-chart-line"></i>
+            <h2>250+</h2>
+            <p>Companies Active</p>
+        </div>
+</div>
+
+
+<!-- ================= MODULES ================= -->
+<section class="modules-section">
+    <div class="center-text">
+        <h2>Three Powerful Modules</h2>
+        <p>Everything you need to explore industries, find employment, and grow your business.</p>
+    </div>
+  
+    <div class="modules-grid">
+  
+      <!-- CARD 1 -->
+      <div class="module-card blue">
+            <i class="fa-solid fa-location-dot icon-blue"></i>
+  
+        <h3>Industrial Map</h3>
+        <p class="desc">
+          Explore industries near you on an interactive map. Filter by type, distance, and more.
+        </p>
+        <ul class="feature-list">
+            <li>→ Real-time location tracking</li>
+            <li>→ Filter by industry type</li>
+            <li>→ View company details</li>
+        </ul>
+        <a href="{{ url_for('industrymap')}}" class="action-link">Explore Map →</a>
+      </div>
+  
+      <!-- CARD 2 -->
+      <div class="module-card orange">
+        <i class="fa-solid fa-briefcase icon-orange"></i>
+
+  
+        <h3>Job Portal</h3>
+        <p class="desc">
+          Simple job search for workers. Companies can post jobs and find workers easily.
+        </p>
+        <ul class="feature-list">
+                    <li>→ Easy job search</li>
+                    <li>→ Daily wage opportunities</li>
+                    <li>→ Direct company contact</li>
+                </ul>
+        
+  
+        <a href="{{url_for('jobportal')}}" class="action-link">Find Jobs →</a>
+      </div>
+      
+      <!-- CARD 3 -->
+      <div class="module-card green">
+          <i class="fa-solid fa-box icon-green"></i>
+
+  
+        <h3>B2B Trade</h3>
+        <p class="desc">
+          Buy and sell raw materials. Connect with suppliers and grow your business.
+        </p>
+
+        <ul class="feature-list">
+            <li>→ Browse suppliers nearby</li>
+            <li>→ Request quotes easily</li>
+            <li>→ Verified companies</li>
+        </ul>
+
+        <a href="{{ url_for('trade') }}" class="action-link">Start Trading →</a>
+      </div>
+  
+    </div>
+  </section>
+  
+<!--========================= JOB SECTION =====================-->
+<section class="jobs-section">
+
+    <div class="jobs-header">
+      <div>
+        <h2>Latest Job Openings</h2>
+        <p>Find opportunities near you</p>
+      </div>
+      
+  
+      <a href="{{ url_for('jobportal') }}" class="view-all-btn">
+        View All Jobs →
+      </a>
+    </div>
+  
+    <div class="jobs-grid">
+  
+      <!-- JOB CARD -->
+    <div class="job-card">
+        <div class="job-top">
+            <span class="salary">Construction Worker</span>
+            <span class="salary">₹500/day</span>
+        </div>
+  
+        
+        <p class="company">BuildRight Construction</p>
+  
+        <div class="job-meta">
+          <span>📍 3.5 km</span>
+          <span>👥 10 positions</span>
+        </div>
+
+    </div>
+
+    <div class="job-card">
+        <div class="job-top">
+            <span class="salary">Factory Housekeeping Staff</span>
+            <span class="salary">₹300/day</span>
+        </div>
+  
+        
+        <p class="company">Builder Construction</p>
+  
+        <div class="job-meta">
+          <span>📍 2.5 km</span>
+          <span>👥 5 positions</span>
+        </div>
+
+    </div>
+
+    <div class="job-card">
+        <div class="job-top">
+            <span class="salary">Factory Worker</span>
+            <span class="salary">₹700/day</span>
+        </div>
+  
+        
+        <p class="company">Tata Steel</p>
+  
+        <div class="job-meta">
+          <span>📍 5 km</span>
+          <span>👥 15 positions</span>
+        </div>
+
+    </div>
+
+    <div class="job-card">
+        <div class="job-top">
+            <span class="salary">Security Guard</span>
+            <span class="salary">₹900/day</span>
+        </div>
+        
+        <p class="company">Icon Power</p>
+  
+        <div class="job-meta">
+          <span>📍 6.5 km</span>
+          <span>👥 4 positions</span>
+        </div>
+
+    </div>
+
+    <div class="job-card">
+        <div class="job-top">
+            <span class="salary">Helper</span>
+            <span class="salary">₹300/day</span>
+        </div>
+  
+        
+        <p class="company">BuildRight Const</p>
+  
+        <div class="job-meta">
+          <span>📍 2 km</span>
+          <span>👥 1 positions</span>
+        </div>
+
+    </div>
+    
+      <div class="job-card">
+        <div class="job-top">
+          <span class="salary">Maintenance Helper</span>
+          <span class="salary">₹450/day</span>
+        </div>
+  
+        <p class="company">ChemTech Solutions</p>
+  
+        <div class="job-meta">
+          <span>📍 6 km</span>
+          <span>👥 2 positions</span>
+        </div>
+      </div>
+  
+    </div>
+  </section>
+  
+<!-- =================== Industry Profile ==============-->
+<section class="featured-industries">
+
+    <div class="fi-header">
+      <div>
+        <h2>Featured Industries</h2>
+        <p>Explore verified companies near you</p>
+      </div>
+  
+      <a href="{{url_for('industrymap')}}" class="view-map-btn">
+        View Map →
+      </a>
+    </div>
+  
+    <div class="fi-grid">
+  
+      <!-- CARD -->
+      <div class="fi-card">
+        <div class="fi-icon red">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>ABC Manufacturing Pvt Ltd</h3>
+          <span class="category">Manufacturing</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Pune
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.5 <small>(45)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+      <div class="fi-card">
+        <div class="fi-icon green">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>XYZ Textiles</h3>
+          <span class="category">Textile</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Aurangabad
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.2 <small>(32)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+      <div class="fi-card">
+        <div class="fi-icon blue">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>PharmaCure Industries</h3>
+          <span class="category">Pharma</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Nashik
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.7 <small>(58)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+      <div class="fi-card">
+        <div class="fi-icon yellow">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>BuildRight Construction</h3>
+          <span class="category">Construction</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Nagpur
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.0 <small>(28)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+      <div class="fi-card">
+        <div class="fi-icon purple">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>ChemTech Solutions</h3>
+          <span class="category">Chemical</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Chakan
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.3 <small>(22)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+      <div class="fi-card">
+        <div class="fi-icon orange">
+          <i class="fa-solid fa-industry"></i>
+        </div>
+  
+        <div class="fi-content">
+          <h3>FreshPack Foods</h3>
+          <span class="category">Food</span>
+  
+          <div class="fi-row">
+            <span class="location">
+              <i class="fa-solid fa-location-dot"></i> MIDC Satara
+            </span>
+  
+            <span class="rating">
+              ⭐ 4.6 <small>(67)</small>
+            </span>
+          </div>
+  
+          <div class="verified">
+            <i class="fa-solid fa-circle-check"></i> Verified Company
+          </div>
+        </div>
+      </div>
+  
+    </div>
+  </section>
+  
+<!-- ================= CTA ================= -->
+<section class="cta">
+    <h2>Ready to Get Started?</h2>
+    <p>Join thousands of workers, companies, and businesses already using IndusTech.</p>
+    <div class="cta-buttons">
+      <button onclick="window.location.href='{{ url_for('signup') }}'" class="cta-btn primary">Register as Company </button>
+      <button onclick="window.location.href='{{ url_for('login') }}'" class="cta-btn secondary">Company Login</button>
+    </div>  
+  </section>
+  
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses in one platform.</p>
+  </div>
+
+  <div>
+    <h4>Quick Links</h4>
+    <a>Industrial Map</a>
+    <a>Job Portal</a>
+    <a>B2B Trade</a>
+  </div>
+
+  <div>
+    <h4>For Users</h4>
+    <a>Register as Worker</a>
+    <a>Register as Company</a>
+    <a>Find Jobs</a>
+  </div>
+
+  <div>
+    <h4>Contact</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+
+<script>
+  function goToIndustryMap() {
+    const query = document.getElementById("search-box").value.trim();
+  
+    if (!query) {
+      alert("Please enter something to search");
+      return;
+    }
+  
+    window.location.href =
+      "{{ url_for('industrymap') }}?search=" + encodeURIComponent(query);
+  }
+  </script>
+  
+</body>
+</html>

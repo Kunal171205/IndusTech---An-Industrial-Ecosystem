@@ -1,0 +1,120 @@
+website: collection of web pages access through browswer using internet protocol
+
+
+web application : 
+restuarnat -> web application
+1. You -> Your browswer
+2. Menu -> Website forms
+3. Order -> Request
+4. Waiter -> Flask Rouute
+5. Chef -> Backgroun logic/ server
+6. food -> Response
+
+#Server: Computer which not shut downs
+Listen -> Understood -> Send the right Back
+
+#python Limtations: 
+how to talk with browswer
+how to handle web pages
+how to login id and all
+
+#framework:Tool box where all basic things are there and we can use them to build our website
+ex. Bricks/gates are used in house making
+Python gives you essential things for building a specific framework
+
+#flask benefits:
+Easy to learn as beginers
+Data science
+Handles both small and large projects
+
+____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+  
+
+#Understanding Web Interactions
+
+# HTTP/HTTPS: Rules used by browswer and server to Understand each other/Communication
+Hypertext transfer protocol 
+Hypertext transfer protocol with security
+
+
+
+1. Your browswer sends a Request to server
+2. Server recevies the Request
+3. Server processes the Request
+4. The server sends back a Response
+5. Your browswer displays the Response as a webpage
+
+-> inside the Request : URL + METHOD : GET/POST + Headers
+-> inside the Response : HTML/JSON + status code
+
+status code:
+200 -> OK
+404 -> Not Found
+500 -> Internal Server Erroe
+301 -> Moved Permenantly
+403 -> Forbidden
+
+URL : uniform resource locator
+
+app = flask(__name__)
+app is object which represnet our website and the name is main file
+
+@app.route("/") : It is route decorater whenever this website will open you have to below code use
+def home():
+return "hello world"
+route should be unique
+
+
+Methods : GET/POST
+get :
+to get data
+ask servr to give data
+information is given small amount to server or nothing
+
+post :
+to send data to Server
+information send to server
+server user you data to do something
+
+Final Summary Table
+Core Object	                What It Does	                                  Easy Example
+request	                    Read what the user sends	                      request.form["name"] from a form
+response	                Send something back to the user	                  return Response(..., mimetype=...)
+redirect	                Move the user to a different page	              redirect("/thank-you")
+url_for	                    Build a route dynamically from function name	  url_for("home") → "/home"
+session                     Remember user info across pages	                  session["username"] = "sagar"
+
+#JINJA
+
+1.PYTHON VALUES
+{{variables}}
+
+return render_template("index.html, variables=variables_NAMES)
+
+2.CONDITIONAL APPLY
+{% if %}...{% else %}...{% endif %}
+
+3.LOOP CONTROL
+{% FOR CONDITION IN VALUES %}
+
+
+#flash() messages: temporary msg that are showed when process is happen. only one time
+flash
+
+
+{% with messages = get_flashed_messages() %}
+flash(messages)
+
+
+#Flask WTF : web template form
+built in validtor in flask
+uses classes for easy backend logic
+security from CSRF ATTACK
+
+#company login issue
+#js logic for map
+#css development of all pages
+
+https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/backdrop-filter
+
+https://codepen.io/alphardex/pen/pooQMVp

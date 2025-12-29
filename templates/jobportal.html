@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Portal | IndusTech</title>
+  <link rel="stylesheet" href="{{url_for('static', filename='css/jobportal.css') }}">
+  <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-industry"></i>
+      <div>
+        <strong>IndusTech</strong><br>
+        <small>Industrial Ecosystem</small>
+      </div>
+    </div>
+  
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}" > <i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+      <a href="{{url_for('jobportal') }}" class="active"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+      <a href="{{ url_for('trade')}}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+    </nav>
+  
+    <div class="auth">
+      <a href ="{{url_for('login')}}" class="login">Login</a>
+      <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
+    </div>
+  </header>
+  
+  <div class="orange-strip"></div>
+    <!-- HERO -->
+    <section class="hero">
+    <h1>Find Jobs Near You</h1>
+    <p>Simple job search for housekeeping, production, security, and more.</p>
+
+    <!-- SEARCH BAR -->
+<div class="search-wrapper">
+    <div class="search-input">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Search jobs or companies..." />
+    </div>
+  
+    <button class="filter-btn" id="filterToggle">
+      <i class="fa-solid fa-filter"></i>
+      Filters
+      <i class="fa-solid fa-chevron-down" id="filterIcon"></i>
+    </button>
+  </div>
+  </section>
+
+  <!-- FILTER PANEL -->
+  <div class="filter-panel" id="filterPanel">
+  
+    <div class="filter-left">
+      <h4>Job Category</h4>
+      <div class="filter-chips">
+        <span class="chip active" data-category="Housekeeping">🧹 Housekeeping</span>
+        <span class="chip" data-category="Production">🏭 Production</span>
+        <span class="chip" data-category="Construction">🏗️ Construction</span>
+        <span class="chip" data-category="Maintenance">🔧 Maintenance</span>
+        <span class="chip" data-category="Security">🛡️ Security</span>
+
+      </div>
+    </div>
+  
+    <div class="filter-right">
+      <h4>Distance</h4>
+      <div class="filter-chips">
+        <span class="chip" data-distance="1">1 km</span>
+        <span class="chip" data-distance="5">5 km</span>
+        <span class="chip active" data-distance="10">10 km</span>
+        <span class="chip" data-distance="20">20 km</span>
+      </div>
+    </div>
+
+    <button id="clearFilters" class="clear-btn">Clear Filters</button>
+
+  
+  </div>
+<!-- JOB LIST -->
+<section class="jobs-section">
+  <div class="jobs-header">
+    <h3>6 Jobs Found</h3>
+    <select>
+      <option>Newest First</option>
+      <option>Salary High to Low</option>
+    </select>
+  </div>
+
+  <div class="jobs-grid">
+
+    <div class="job-card urgent" data-category="Housekeeping" data-distance="2.5">
+      <h4>Factory Housekeeping Staff</h4>
+      <p class="company">ABC Manufacturing Pvt Ltd</p>
+      <div class="salary">₹300/day</div>
+      <div class="job-meta">
+        <span><i class="fa-solid fa-location-dot"></i> 2.5 km away</span>
+        <span><i class="fa-regular fa-clock"></i> 8:00 AM – 4:00 PM</span>
+        <span><i class="fa-solid fa-users"></i> 3 positions</span>
+      </div>      
+    </div>
+
+    <div class="job-card urgent" data-category="Production" data-distance="2.5">
+      <h4>Production Helper</h4>
+      <p class="company">ABC Manufacturing Pvt Ltd</p>
+      <div class="salary">₹400/day</div>
+      <div class="job-meta">
+        <span><i class="fa-solid fa-location-dot"></i> 2.5 km away</span>
+        <span><i class="fa-regular fa-clock"></i> 9:00 AM – 6:00 PM</span>
+        <span><i class="fa-solid fa-users"></i> 5 positions</span>
+      </div> 
+    </div>
+
+    <div class="job-card urgent" data-category="Security" data-distance="5">
+      <h4>Security Guard</h4>
+      <p class="company">XYZ Textiles</p>
+      <div class="salary">₹12000/month</div>
+      <div class="job-meta">
+        <span><i class="fa-solid fa-location-dot"></i> 5 km away</span>
+        <span><i class="fa-regular fa-clock"></i> 8:00 AM – 6:00 PM</span>
+        <span><i class="fa-solid fa-users"></i> 2 positions</span>
+      </div> 
+    </div>
+
+    <div class="job-card urgent">
+      <h4>Cleaning Staff</h4>
+      <p class="company">PharmaCure Industries</p>
+      <div class="salary">₹350/day</div>
+      <div class="job-meta">
+        <span><i class="fa-solid fa-location-dot"></i> 8 km away</span>
+        <span><i class="fa-regular fa-clock"></i> 7:00 AM – 4:00 PM</span>
+        <span><i class="fa-solid fa-users"></i> 4 positions</span>
+      </div> 
+    </div>
+
+    <div class="job-card urgent">
+      <h4>Construction Worker</h4>
+      <p class="company">BuildRight Construction</p>
+      <div class="salary">₹500/day</div>
+      <div class="meta">3.5 km • 6:00 AM – 2:00 PM • 10 positions</div>
+    </div>
+
+    <div class="job-card urgent">
+      <h4>Maintenance Helper</h4>
+      <p class="company">ChemTech Solutions</p>
+      <div class="salary">₹450/day</div>
+      <div class="meta">6 km • 9:00 AM – 5:00 PM • 2 positions</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Looking to Hire Workers?</h2>
+  <p>Post jobs and connect with thousands of verified workers near your location.</p>
+  <div class="cta-buttons">
+    <button class="cta-btn primary">Register as Company</button>
+    <button class="cta-btn secondary">Company Login</button>
+  </div>  
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses.</p>
+  </div>
+  <div>
+    <h4>Quick Links</h4>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </div>
+  <div>
+    <h4>For Users</h4>
+    <a href="#">Register as Worker</a>
+    <a href="#">Register as Company</a>
+  </div>
+  <div>
+    <h4>Contact</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/jobportal.js' ) }}"></script>
+</body>
+</html>

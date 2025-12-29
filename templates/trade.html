@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>B2B Trade | IndusTech</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/trade.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-industry"></i>
+      <div>
+        <strong>IndusTech</strong><br>
+        <small>Industrial Ecosystem</small>
+      </div>
+    </div>
+  
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}" > <i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+      <a href="{{url_for('jobportal') }}" > <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+      <a href="{{url_for('trade') }}" class="active"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+    </nav>
+  
+    <div class="auth">
+      <a href ="{{url_for('login')}}" class="login">Login</a>
+      <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
+    </div>
+  </header>
+
+
+<!-- HERO / SEARCH SECTION -->
+<section class="b2b-hero">
+    <div class="hero-content">
+      <h1>B2B Trade Portal</h1>
+      <p>Buy and sell raw materials. Connect with verified suppliers near you.</p>
+  
+      <div class="hero-search-wrapper">
+        <div class="hero-search-bar">
+          
+          <div class="search-input">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              placeholder="Search products, materials, or suppliers..."
+            />
+          </div>
+      
+          <button class="search-btn">
+            Search Products
+          </button>
+      
+        </div>
+      </div>
+      
+    </div>
+  </section>
+  
+  <!-- CATEGORY FILTERS -->
+  <section class="category-bar">
+    <span class="label">Categories:</span>
+  
+    <button class="cat active">All Products</button>
+    <button class="cat">Raw Materials</button>
+    <button class="cat">Equipment</button>
+    <button class="cat">Chemicals</button>
+    <button class="cat">Construction</button>
+    <button class="cat">Packaging</button>
+    <button class="cat">Textiles</button>
+  </section>
+  
+
+<!-- MAIN -->
+<main class="container">
+
+  <div class="b2b-grid">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="featured-suppliers">
+        <h3>Featured Suppliers</h3>
+      
+        <div class="supplier-list">
+      
+          <a href="#" class="supplier-item">
+            <div class="supplier-icon">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="supplier-text">
+              <div class="supplier-name">ABC Manufacturing Pvt Ltd</div>
+              <div class="supplier-meta">
+                <i class="fa-solid fa-star"></i>
+                <span>4.5</span>
+                <i class="fa-solid fa-circle-check verified"></i>
+              </div>
+            </div>
+          </a>
+      
+          <a href="#" class="supplier-item">
+            <div class="supplier-icon">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="supplier-text">
+              <div class="supplier-name">XYZ Textiles</div>
+              <div class="supplier-meta">
+                <i class="fa-solid fa-star"></i>
+                <span>4.2</span>
+                <i class="fa-solid fa-circle-check verified"></i>
+              </div>
+            </div>
+          </a>
+      
+          <a href="#" class="supplier-item">
+            <div class="supplier-icon">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="supplier-text">
+              <div class="supplier-name">BuildRight Construction</div>
+              <div class="supplier-meta">
+                <i class="fa-solid fa-star"></i>
+                <span>4.0</span>
+              </div>
+            </div>
+          </a>
+      
+          <a href="#" class="supplier-item">
+            <div class="supplier-icon">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="supplier-text">
+              <div class="supplier-name">ChemTech Solutions</div>
+              <div class="supplier-meta">
+                <i class="fa-solid fa-star"></i>
+                <span>4.3</span>
+                <i class="fa-solid fa-circle-check verified"></i>
+              </div>
+            </div>
+          </a>
+      
+          <a href="#" class="supplier-item">
+            <div class="supplier-icon">
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <div class="supplier-text">
+              <div class="supplier-name">FreshPack Foods</div>
+              <div class="supplier-meta">
+                <i class="fa-solid fa-star"></i>
+                <span>4.6</span>
+                <i class="fa-solid fa-circle-check verified"></i>
+              </div>
+            </div>
+          </a>
+      
+        </div>
+      
+        <a href="#" class="view-all">View All Suppliers</a>
+      </aside>
+      
+      
+
+    <!-- PRODUCTS -->
+    <section class="products-section">
+
+      <div class="products-header">
+        <h2>6 Products</h2>
+
+        <div class="products-controls">
+
+            <!-- VIEW TOGGLE -->
+            <div class="view-toggle">
+              <button id="gridView" class="active" aria-label="Grid view">
+                <i class="fa-solid fa-table-cells"></i>
+              </button>
+          
+              <button id="listView" aria-label="List view">
+                <i class="fa-solid fa-list"></i>
+              </button>
+            </div>
+          
+            <!-- SORT -->
+            <select>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+            </select>
+          
+          </div>
+          
+      </div>
+
+
+      <div class="products-scroll"> 
+      <div class="products-grid">
+
+        <!-- PRODUCT CARD -->
+        <div class="product-card">
+            <!-- IMAGE / PLACEHOLDER AREA -->
+            <div class="product-image">
+                <!-- CASE 1: If image exists -->
+                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+
+                <!-- CASE 2: If image NOT available -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="product-body">
+                <span class="product-category">Raw Materials</span>
+
+                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
+                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+
+                <div class="product-price-row">
+                <span class="price">₹400<span>/meter</span></span>
+                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                </div>
+
+                <div class="product-stock">
+                <span class="dot"></span> In Stock
+                </div>
+            </div>
+
+        </div>
+
+        <div class="product-card">
+            <!-- IMAGE / PLACEHOLDER AREA -->
+            <div class="product-image">
+                <!-- CASE 1: If image exists -->
+                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+
+                <!-- CASE 2: If image NOT available -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="product-body">
+                <span class="product-category">Raw Materials</span>
+
+                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
+                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+
+                <div class="product-price-row">
+                <span class="price">₹350<span>/meter</span></span>
+                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                </div>
+
+                <div class="product-stock">
+                <span class="dot"></span> In Stock
+                </div>
+            </div>
+
+        </div>
+
+        <div class="product-card">
+            <!-- IMAGE / PLACEHOLDER AREA -->
+            <div class="product-image">
+                <!-- CASE 1: If image exists -->
+                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+
+                <!-- CASE 2: If image NOT available -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="product-body">
+                <span class="product-category">Raw Materials</span>
+
+                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
+                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+
+                <div class="product-price-row">
+                <span class="price">₹500<span>/meter</span></span>
+                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                </div>
+
+                <div class="product-stock">
+                <span class="dot"></span> In Stock
+                </div>
+            </div>
+
+        </div>
+
+        <div class="product-card">
+            <!-- IMAGE / PLACEHOLDER AREA -->
+            <div class="product-image">
+                <!-- CASE 1: If image exists -->
+                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+
+                <!-- CASE 2: If image NOT available -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="product-body">
+                <span class="product-category">Raw Materials</span>
+
+                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
+                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+
+                <div class="product-price-row">
+                <span class="price">₹450<span>/meter</span></span>
+                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                </div>
+
+                <div class="product-stock">
+                <span class="dot"></span> In Stock
+                </div>
+            </div>
+
+        </div>
+
+        <div class="product-card">
+            <!-- IMAGE / PLACEHOLDER AREA -->
+            <div class="product-image">
+                <!-- CASE 1: If image exists -->
+                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+
+                <!-- CASE 2: If image NOT available -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="product-body">
+                <span class="product-category">Raw Materials</span>
+
+                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
+                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+
+                <div class="product-price-row">
+                <span class="price">₹450<span>/meter</span></span>
+                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                </div>
+
+                <div class="product-stock">
+                <span class="dot"></span> In Stock
+                </div>
+            </div>
+
+        </div>
+
+      </div>
+    
+    </section>
+
+  </div>
+
+  <!-- CTA -->
+  <section class="sell-cta">
+    <h2>Want to Sell Your Products?</h2>
+    <p>Register as a supplier and reach thousands of businesses</p>
+
+    <div class="cta-buttons">
+      <button class="primary">Register as a Supplier</button>
+      <button class="secondary">Supplier Login</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses.</p>
+  </div>
+
+  <div>
+    <h4>Quick Links</h4>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </div>
+
+  <div>
+    <h4>For Users</h4>
+    <a href="#">Register as Worker</a>
+    <a href="#">Register as Company</a>
+  </div>
+
+  <div>
+    <h4>Contact</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+
+<script>
+    const gridBtn = document.getElementById("gridView");
+    const listBtn = document.getElementById("listView");
+    const grid = document.querySelector(".products-grid");
+  
+    gridBtn.addEventListener("click", () => {
+      grid.classList.remove("list-view");
+      gridBtn.classList.add("active");
+      listBtn.classList.remove("active");
+    });
+  
+    listBtn.addEventListener("click", () => {
+      grid.classList.add("list-view");
+      listBtn.classList.add("active");
+      gridBtn.classList.remove("active");
+    });
+  </script>
+  
+</body>
+</html>

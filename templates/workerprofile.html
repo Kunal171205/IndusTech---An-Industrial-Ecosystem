@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech | Worker Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static' , filename='css/workerprofile.css') }}">
+</head>
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}" class="active"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+    {% if session.get('user_type') == 'worker' %}
+      <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+    {% endif %}
+  </div>
+</header>
+
+
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+          <div class="profile-avatar">
+          {% if worker.profile_photo %}
+            <img src="{{ url_for('static', filename='uploads/' + worker.profile_photo) }}">
+          {% else %}
+            <div class="avatar-initial">{{ initial }}</div>
+          {% endif %}
+      
+          <form method="POST"
+                action="{{ url_for('upload_profile_photo') }}"
+                enctype="multipart/form-data">
+                <label class="edit-avatar-btn">
+                  <i class="fas fa-camera"></i>
+                  <input type="file"
+                         name="profile_photo"
+                         hidden
+                         onchange="this.form.submit()">
+                  </label>
+            </form>
+          </div>
+      
+            <div class="profile-info">
+                <h1>{{ worker.name }}</h1>
+                <div class="profile-actions">
+                    <button class="btn-edit-profile"  onclick="openEditModal()"><i class="fas fa-edit"></i> Edit Profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Left Sidebar -->
+            <div class="profile-sidebar">
+                <!-- Personal Information -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-user"></i> Personal Information</h3>
+                    <div class="info-item">
+                        <label>Full Name:</label>
+                        <span>{{ worker.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Date of Birth:</label>
+                        <span>{{ worker.dob.strftime('%d %B %Y') if worker.dob else 'Not set' }}</sp</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Gender:</label>
+                        <span>{{ worker.gender or 'Not set' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Languages:</label>
+                        <span>
+                            {{ worker.languages.replace(',', ', ') if worker.languages else 'Not set' }}
+                        </span>
+                    </div>                                      
+                </div>
+
+                <!-- Contact Information -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-phone"></i> Contact Information</h3>
+                    <div class="info-item">
+                        <label>Phone:</label>
+                        <span>{{ worker.phone_no }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Email:</label>
+                        <span>{{ worker.email }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Address:</label>
+                        <span>{{ worker.address }}</span>
+                    </div>
+                </div>
+
+                <!-- Work Preferences
+                <div class="profile-card">
+                    <h3><i class="fas fa-cog"></i> Work Preferences</h3>
+                    <div class="info-item">
+                        <label>Job Type:</label>
+                        <span>Full-time, Part-time</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Shift Preference:</label>
+                        <span>Day Shift, Night Shift</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Salary Expectation:</label>
+                        <span>₹300-500 per day</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Work Location:</label>
+                        <span>Mumbai, Thane, Navi Mumbai</span>
+                    </div>
+                </div> -->
+            </div> 
+
+            <!-- Main Content -->
+            <div class="profile-main">
+                <!-- Skills Section -->
+                {% if worker.kyc_status == "pending" %}
+                <div class="profile-card">
+                  <h3>⚠️ KYC Pending – Aadhar & PAN verification required to apply for jobs.
+                    <button class="do-kyc-btn" onclick="scrollToKYC()">
+                      Do KYC
+                    </button></h3>
+                </div>
+                {% endif %}
+                
+                  <!-- DOCUMENT UPLOAD CARD -->
+                  <div class="profile-card"
+                     id="kyc-section"
+                     {% if worker.kyc_status == "pending" and not session.get("kyc_started") %}style="display:none;"
+                {% endif %}>
+                
+                  <h3>Upload Required Documents</h3>
+                  <p class="doc-subtitle">
+                    Aadhar Card and PAN Card are mandatory for job verification.
+                    Resume is optional.
+                  </p>
+                  <br>
+                
+                  <h3>Documents</h3>
+                
+
+                <!-- AADHAR -->
+                <div class="doc-row">
+                  <strong>Aadhar Card:</strong>
+                
+                  <div class="doc-right">
+                    {% if worker.aadhar_card %}
+                      <div class="doc-actions">
+                        <a href="{{ url_for('static', filename='uploads/' + worker.aadhar_card) }}"
+                           target="_blank"
+                           class="view-btn">View</a>
+                
+                        <button type="button"
+                                class="change-btn"
+                                onclick="showChangeForm('aadhar-form')">
+                          Change
+                        </button>
+                      </div>
+                
+                      <form id="aadhar-form"
+                            method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data"
+                            class="change-form">
+                        <input type="file" name="aadhar_card" required>
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                    {% else %}
+                      <form method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data">
+                        <input type="file" name="aadhar_card" required>
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                
+                <!--PAN-->
+                <div class="doc-row">
+                  <strong>PAN Card:</strong>
+                
+                  <div class="doc-right">
+                    {% if worker.pan_card %}
+                      <div class="doc-actions">
+                        <a href="{{ url_for('static', filename='uploads/' + worker.pan_card) }}"
+                           target="_blank"
+                           class="view-btn">View</a>
+                
+                        <button type="button"
+                                class="change-btn"
+                                onclick="showChangeForm('pan-form')">
+                          Change
+                        </button>
+                      </div>
+                
+                      <form id="pan-form"
+                            method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data"
+                            class="change-form">
+                        <input type="file" name="pan_card" required>
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                    {% else %}
+                      <form method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data">
+                        <input type="file" name="pan_card" required>
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                <!-- RESUME -->
+                <div class="doc-row">
+                  <strong>Resume:</strong>
+                
+                  <div class="doc-right">
+                    {% if worker.resume %}
+                      <div class="doc-actions">
+                        <a href="{{ url_for('static', filename='uploads/' + worker.resume) }}"
+                           target="_blank"
+                           class="view-btn">
+                          View
+                        </a>
+                
+                        <button type="button"
+                                class="change-btn"
+                                onclick="showChangeForm('resume-form')">
+                          Change
+                        </button>
+                      </div>
+                
+                      <form id="resume-form"
+                            method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data"
+                            class="change-form">
+                        <input type="file" name="resume" accept=".pdf">
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                
+                    {% else %}
+                      <form method="POST"
+                            action="{{ url_for('upload_worker_documents') }}"
+                            enctype="multipart/form-data">
+                        <input type="file" name="resume" accept=".pdf">
+                        <button type="submit" class="upload-btn">Upload</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </div>
+                
+                </div>
+              
+
+                <!-- Work Experience -->
+                <div class="profile-card">
+                  <h3>
+                    <i class="fa fa-briefcase"></i>
+                    Work Experience
+                    <button class="btn-add-exp" onclick="openExpModal()">+ Add Work Experience</button>
+                  </h3>                          
+                    {% for exp in worker.experiences %}
+                    <div class="experience-item">
+                      <div class="exp-header">
+                        <h4>{{ exp.job_title }}</h4>
+                        <span class="exp-duration">
+                          {{ exp.start_date }} -
+                          {{ exp.end_date if exp.end_date else "Present" }}
+                        </span>
+                      </div>
+
+                      <div class="exp-company">
+                        {{ exp.company_name }}, {{ exp.location }}
+                      </div>
+
+                      <p class="exp-description word-wrap-fix"">
+                        {{ exp.description }}
+                      </p>
+                    </div>
+                    {% else %}
+                    <p>No work experience added yet.</p>
+                    {% endfor %}
+
+                </div>
+
+                <!-- Education -->
+                <div class="profile-card">
+                    <h3>
+                      <i class="fas fa-graduation-cap"></i>
+                      Education
+                      <button class="btn-add-exp" onclick="openEduModal()">+ Add Education</button>
+                    </h3>
+                        {% for edu in worker.educations %}
+                        <div class="education-item">
+                          <div class="edu-header">
+                            <h4>{{ edu.degree }}</h4>
+                            {% if edu.year_of_passing %}
+                              <span class="edu-year">{{ edu.year_of_passing }}</span>
+                            {% endif %}
+                          </div>
+
+                          <div class="edu-institution">{{ edu.institution }}</div>
+
+                          {% if edu.board_university %}
+                            <div class="edu-grade">{{ edu.board_university }}</div>
+                          {% endif %}
+
+                          {% if edu.grade %}
+                            <div class="edu-grade">Grade: {{ edu.grade }}</div>
+                          {% endif %}
+                        </div>
+                      {% else %}
+                        <p class="text-muted">No education details added</p>
+                      {% endfor %}
+                    </div>
+
+
+                <!-- Certifications -->
+                <div class="profile-card">
+                  <h3>
+                    <i class="fas fa-certificate"></i>
+                    Certifications
+                    <button class="btn-add-exp" onclick="openCertModal()">+ Add Certification</button>
+                  </h3>
+                
+                  <!-- LIST -->
+                  {% for cert in worker.certifications %}
+                    <div class="cert-item">
+                      <div>
+                        <h4 class="word-wrap-fix">{{ cert.title }}</h4>
+                        <p>{{ cert.issuer }}</p>
+                
+                        {% if cert.valid_till %}
+                          <small>Valid till: {{ cert.valid_till.strftime('%d %b %Y') }}</small>
+                        {% endif %}
+                      </div>
+                
+                      <div class="cert-actions">
+                        {% if cert.certificate_file %}
+                          <a href="{{ url_for('static', filename='uploads/' + cert.certificate_file) }}"
+                             target="_blank" class="view-btn">View</a>
+                             
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% else %}
+                    <p class="text-muted">No certifications added</p>
+                  {% endfor %}
+                </div>
+                
+   
+
+<!-- ================= EDIT PROFILE MODAL ================= -->
+<div id="editProfileModal" class="modal-overlay">
+        <div class="modal-card">
+    
+            <div class="modal-header">
+                <h2>Edit Personal Information</h2>
+                <button class="close-btn" onclick="closeEditModal()">×</button>
+            </div>
+    
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ worker.email or '' }}">
+                </div>
+    
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" name="phone" value="{{ worker.phone_no }}" required>
+                </div>
+    
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="">Select</option>
+                        <option value="Male" {% if worker.gender=='Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if worker.gender=='Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if worker.gender=='Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+    
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="dob"
+                           value="{{ worker.dob.strftime('%Y-%m-%d') if worker.dob else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Languages Known</label>
+                
+                    {% set selected = (worker.languages or '').split(',') %}
+                
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="languages" value="Hindi"
+                                   {% if 'Hindi' in selected %}checked{% endif %}>
+                            Hindi
+                        </label>
+                
+                        <label>
+                            <input type="checkbox" name="languages" value="English"
+                                   {% if 'English' in selected %}checked{% endif %}>
+                            English
+                        </label>
+                
+                        <label>
+                            <input type="checkbox" name="languages" value="Marathi"
+                                   {% if 'Marathi' in selected %}checked{% endif %}>
+                            Marathi
+                        </label>
+                    </div>
+                </div>
+                               
+    
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea name="address">{{ worker.address or '' }}</textarea>
+                </div>
+    
+                <div class="modal-footer">
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </div>
+            </form>
+    
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+   <!-- ================= ADD WORK EXPERIENCE MODAL ================= -->
+<div id="experienceModal" class="modal-overlay">
+  <div class="modal-card large">
+
+    <div class="modal-header">
+      <h2>Add Work Experience</h2>
+      <button class="close-btn" onclick="closeExpModal()">×</button>
+    </div>
+
+    <form id="experienceForm">
+      <div class="form-group">
+        <label>Job Title *</label>
+        <input type="text" name="job_title" required placeholder="e.g. Production Worker">
+      </div>
+
+      <div class="form-group">
+        <label>Company Name *</label>
+        <input type="text" name="company_name" required placeholder="e.g. ABC Manufacturing Pvt Ltd">
+      </div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" name="location" placeholder="e.g. Pune, Maharashtra">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" name="start_date" required>
+        </div>
+
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date">
+        </div>
+      </div>
+
+      <div class="form-group checkbox-inline">
+        <input type="checkbox" id="currentlyWorking">
+        <label for="currentlyWorking">Currently working here</label>
+      </div>
+
+      <div class="form-group">
+        <label>Job Description</label>
+        <textarea name="description" rows="4"
+          placeholder="Briefly describe your role and responsibilities"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn-save">Save Experience</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- =================ADD CERTIFICATES ====================-->
+<div id="certModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Add Certification</h2>
+      <button class="close-btn" onclick="closeCertModal()">×</button>
+    </div>
+
+    <form method="POST"
+          action="{{ url_for('add_certification') }}"
+          enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" name="title" required>
+      </div>
+
+      <div class="form-group">
+        <label>Issued By</label>
+        <input type="text" name="issuer">
+      </div>
+
+      <div class="form-group">
+        <label>Valid Till</label>
+        <input type="date" name="valid_till">
+      </div>
+
+      <div class="form-group">
+        <label>Certificate File</label>
+        <input type="file" name="certificate_file" accept=".pdf,.png,.jpg">
+      </div>
+
+      <button type="submit" class="btn-save">Add</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================ ADD EDUCATION OF WORKER ====================-->
+<div id="educationModal" class="modal-overlay">
+  <div class="modal-card">
+
+    <div class="modal-header">
+      <h2>Add Education</h2>
+      <button class="close-btn" onclick="closeEduModal()">×</button>
+    </div>
+
+    <form id="educationForm">
+      <div class="form-group">
+        <label>Degree / Qualification *</label>
+        <input type="text" name="degree" required placeholder="SSC / HSC / ITI / Diploma">
+      </div>
+
+      <div class="form-group">
+        <label>Institution *</label>
+        <input type="text" name="institution" required>
+      </div>
+
+      <div class="form-group">
+        <label>Board / University</label>
+        <input type="text" name="board_university">
+      </div>
+
+      <div class="form-group">
+        <label>Year of Passing</label>
+        <input type="number" name="year_of_passing" min="1950" max="2100">
+      </div>
+
+      <div class="form-group">
+        <label>Grade / Percentage</label>
+        <input type="text" name="grade" placeholder="75% / First Class">
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn-save">Save Education</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses.</p>
+  </div>
+
+  <div>
+    <h4>Quick Links</h4>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </div>
+
+  <div>
+    <h4>For Users</h4>
+    <a href="#">Register as Worker</a>
+    <a href="#">Register as Company</a>
+  </div>
+
+  <div>
+    <h4>Contact</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+<script src="{{ url_for('static' ,filename='js/workerprofile.js') }}"></script>
+</body>
+</html>

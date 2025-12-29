@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech | Company Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/companyprofile.css') }}">
+</head>
+<body>
+
+    <header>
+        <div class="logo"><i class="fa-solid fa-industry"></i> IndusTech</div>
+        <nav>
+            <a href="home.html"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="industry-map.html"><i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+            <a href="job-portal.html"><i class="fa-solid fa-briefcase"></i> Job Portal</a>
+            <a href="b2btrade.html"><i class="fa-solid fa-box"></i> B2B Trade</a>
+        </nav>
+        <div class="auth-btns">
+            <a href="company-profile.html" class="login">My Profile</a>
+            <a href="login.html" class="signup">Logout</a>
+        </div>
+    </header>
+
+    <div class="profile-container">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if company.profile_photo %}
+                  <img src="{{ url_for('static', filename='uploads/' + company.profile_photo) }}">
+                {% else %}
+                  <div class="avatar-initial">{{ initial }}</div>
+                {% endif %}
+            
+                <form method="POST"
+                      action="{{ url_for('upload_company_photo') }}"
+                      enctype="multipart/form-data">
+                      <label class="edit-avatar-btn">
+                        <i class="fas fa-camera"></i>
+                        <input type="file"
+                               name="profile_photo"
+                               hidden
+                               onchange="this.form.submit()">
+                        </label>
+                  </form>
+            </div>
+
+
+            <div class="profile-info">
+                <h1>{{ company.company_name }}</h1>
+                {%if company.company_category %}
+                <p class="profile-title">{{ company.company_category }}</p>
+                {% endif %}
+                <div class="profile-stats">
+                {% if company.company_size %}
+                <span >
+                    <i class="fas fa-users"></i>
+                    {{ company.company_size }}
+                </span>
+                {% endif %}
+
+                {% if company.company_city %}
+                <span>
+                    <i class="fas fa-map-marker-alt"></i>
+                    {{ company.company_city }}
+                </span>
+                {% endif %}
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-edit-profile"><i class="fas fa-edit"></i> Edit Profile</button>
+                    <button class="btn-create-job"><i class="fas fa-plus"></i> Create Job</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Left Sidebar -->
+            <div class="profile-sidebar">
+                <!-- Company Information -->
+                <div class="profile-card">
+                    <div class="card-header">
+                        <h3>
+                          <i class="fas fa-building"></i>
+                          Company Information
+                        </h3>
+                    
+                        <button class="icon-btn" onclick="openEditModal()">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                      </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Company Type:</label>
+                        <span>{{ company.company_category }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>City:</label>
+                        <span>{{ company.company_city }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Founded:</label>
+                        <span>{{ company.founded_year }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Company Size:</label>
+                        <span>{{ company.company_size}}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>GST Number:</label>
+                        <span>{{ company.gst_number }}</span>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="profile-card">
+                    <div class="card-header">
+                        <h3>
+                          <i class="fas fa-phone"></i>
+                          Contact Information
+                        </h3>
+                    
+                        <button class="icon-btn" onclick="openContEditModal()">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                      </div>
+                    <div class="info-item">
+                        <label>Phone:</label>
+                        <span>{{ company.phone }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Email:</label>
+                        <span>{{ company.email }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Website:</label>
+                        <span>{{ company.website }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Address:</label>
+                        <span>{{ company.address }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Contact Person:</label>
+                        <span>{{ company.contact_person }}</span>
+                    </div>
+                    <div class="info-item word-wrap-fix">
+                        <label>Designation:</label>
+                        <span>{{ company.contact_designation }}</span>
+                    </div>
+                </div>
+            </div>
+                
+            <!-- Main Content -->
+            <div class="profile-main">
+                <!-- Active Jobs -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-briefcase"></i> Active Job Postings</h3>
+                    <div class="jobs-list">
+                        <div class="job-item">
+                            <div class="job-header">
+                                <h4>Production Worker</h4>
+                                <span class="job-status active">Active</span>
+                            </div>
+                            <div class="job-details">
+                                <span><i class="fas fa-users"></i> 5 positions</span>
+                                <span><i class="fas fa-map-marker-alt"></i> Mumbai</span>
+                                <span><i class="fas fa-rupee-sign"></i> ₹300/day</span>
+                            </div>
+                            <div class="job-actions">
+                                <button class="btn-view-applications">View Applications (12)</button>
+                                <button class="btn-edit-job">Edit</button>
+                            </div>
+                        </div>
+
+                        <div class="job-item">
+                            <div class="job-header">
+                                <h4>Quality Control Inspector</h4>
+                                <span class="job-status active">Active</span>
+                            </div>
+                            <div class="job-details">
+                                <span><i class="fas fa-users"></i> 2 positions</span>
+                                <span><i class="fas fa-map-marker-alt"></i> Mumbai</span>
+                                <span><i class="fas fa-rupee-sign"></i> ₹400/day</span>
+                            </div>
+                            <div class="job-actions">
+                                <button class="btn-view-applications">View Applications (8)</button>
+                                <button class="btn-edit-job">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Worker Applications -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-user-check"></i> Recent Applications</h3>
+                    <div class="applications-list">
+                        <div class="application-item">
+                            <div class="applicant-info">
+                                <img src="https://via.placeholder.com/50x50/0a438b/ffffff?text=JD" alt="Applicant">
+                                <div class="applicant-details">
+                                    <h4>John Doe</h4>
+                                    <p>Factory Worker • 5 years experience</p>
+                                    <span class="application-date">Applied 2 days ago</span>
+                                </div>
+                            </div>
+                            <div class="application-actions">
+                                <button class="btn-accept">Accept</button>
+                                <button class="btn-reject">Reject</button>
+                                <button class="btn-view-profile">View Profile</button>
+                            </div>
+                        </div>
+
+                        <div class="application-item">
+                            <div class="applicant-info">
+                                <img src="https://via.placeholder.com/50x50/0a438b/ffffff?text=SK" alt="Applicant">
+                                <div class="applicant-details">
+                                    <h4>Sarah Khan</h4>
+                                    <p>Production Assistant • 3 years experience</p>
+                                    <span class="application-date">Applied 3 days ago</span>
+                                </div>
+                            </div>
+                            <div class="application-actions">
+                                <button class="btn-accept">Accept</button>
+                                <button class="btn-reject">Reject</button>
+                                <button class="btn-view-profile">View Profile</button>
+                            </div>
+                        </div>
+
+                        <div class="application-item">
+                            <div class="applicant-info">
+                                <img src="https://via.placeholder.com/50x50/0a438b/ffffff?text=RP" alt="Applicant">
+                                <div class="applicant-details">
+                                    <h4>Rajesh Patel</h4>
+                                    <p>Machine Operator • 7 years experience</p>
+                                    <span class="application-date">Applied 5 days ago</span>
+                                </div>
+                            </div>
+                            <div class="application-actions">
+                                <button class="btn-accept">Accept</button>
+                                <button class="btn-reject">Reject</button>
+                                <button class="btn-view-profile">View Profile</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B2B Trade History -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-handshake"></i> B2B Trade History</h3>
+                    <div class="trade-history">
+                        <div class="trade-item">
+                            <div class="trade-header">
+                                <div class="trade-partner">
+                                    <i class="fas fa-building"></i>
+                                    <div>
+                                        <h4>XYZ Suppliers Ltd</h4>
+                                        <p>Raw Material Supply</p>
+                                    </div>
+                                </div>
+                                <span class="trade-date">Dec 15, 2025</span>
+                            </div>
+                            <div class="trade-details">
+                                <span class="trade-amount">₹2,50,000</span>
+                                <span class="trade-status completed">Completed</span>
+                            </div>
+                            <div class="trade-description">
+                                Supply of steel sheets and aluminum coils for production line.
+                            </div>
+                        </div>
+
+                        <div class="trade-item">
+                            <div class="trade-header">
+                                <div class="trade-partner">
+                                    <i class="fas fa-truck"></i>
+                                    <div>
+                                        <h4>Logistics Pro</h4>
+                                        <p>Transportation Services</p>
+                                    </div>
+                                </div>
+                                <span class="trade-date">Dec 10, 2025</span>
+                            </div>
+                            <div class="trade-details">
+                                <span class="trade-amount">₹75,000</span>
+                                <span class="trade-status completed">Completed</span>
+                            </div>
+                            <div class="trade-description">
+                                Transportation of finished goods to Delhi warehouse.
+                            </div>
+                        </div>
+
+                        <div class="trade-item">
+                            <div class="trade-header">
+                                <div class="trade-partner">
+                                    <i class="fas fa-tools"></i>
+                                    <div>
+                                        <h4>Tech Solutions Inc</h4>
+                                        <p>Equipment Maintenance</p>
+                                    </div>
+                                </div>
+                                <span class="trade-date">Dec 5, 2025</span>
+                            </div>
+                            <div class="trade-details">
+                                <span class="trade-amount">₹1,20,000</span>
+                                <span class="trade-status in-progress">In Progress</span>
+                            </div>
+                            <div class="trade-description">
+                                Annual maintenance contract for production machinery.
+                            </div>
+                        </div>
+
+                        <div class="trade-item">
+                            <div class="trade-header">
+                                <div class="trade-partner">
+                                    <i class="fas fa-box"></i>
+                                    <div>
+                                        <h4>Global Packaging Co</h4>
+                                        <p>Packaging Materials</p>
+                                    </div>
+                                </div>
+                                <span class="trade-date">Nov 28, 2025</span>
+                            </div>
+                            <div class="trade-details">
+                                <span class="trade-amount">₹45,000</span>
+                                <span class="trade-status completed">Completed</span>
+                            </div>
+                            <div class="trade-description">
+                                Monthly supply of packaging boxes and labels.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Products/Services -->
+                <div class="profile-card">
+                    <h3><i class="fas fa-cogs"></i> Products & Services</h3>
+                    <div class="products-grid">
+                        <div class="product-item">
+                            <i class="fas fa-cog"></i>
+                            <h4>Industrial Machinery</h4>
+                            <p>Manufacturing and assembly of industrial equipment</p>
+                        </div>
+                        <div class="product-item">
+                            <i class="fas fa-tools"></i>
+                            <h4>Custom Fabrication</h4>
+                            <p>Metal fabrication and custom part manufacturing</p>
+                        </div>
+                        <div class="product-item">
+                            <i class="fas fa-wrench"></i>
+                            <h4>Maintenance Services</h4>
+                            <p>Equipment repair and preventive maintenance</p>
+                        </div>
+                        <div class="product-item">
+                            <i class="fas fa-shield-alt"></i>
+                            <h4>Safety Equipment</h4>
+                            <p>Industrial safety gear and equipment supply</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+</div>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>IndusTech</h4>
+                <p>Connecting India's industrial workforce with opportunities.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="home.html">Home</a>
+                <a href="job-portal.html">Find Jobs</a>
+                <a href="industry-map.html">Industry Map</a>
+                <a href="b2btrade.html">B2B Trade</a>
+            </div>
+            <div class="footer-section">
+                <h4>Support</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Contact Us</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 IndusTech. All rights reserved.</p>
+        </div>
+    </footer>
+    
+
+
+<!-- ================= EDIT PROFILE MODAL ================= -->
+<div id="editProfileModal" class="modal-overlay">
+    <div class="modal-card">
+
+        <div class="modal-header">
+            <h2>Edit Company Information</h2>
+            <button class="close-btn" onclick="closeEditModal()">×</button>
+        </div>
+
+        <form id="editProfileForm">
+            <div class="form-group">
+                <label>Company Category *</label>
+                <input type="text" name="company_category" value="{{ company.company_category or '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>City Location *</label>
+                <input type="text" name="company_city" value="{{ company.company_city or ''}}" required>
+            </div>
+
+            <div class="form-group">
+                <label>No. of Employees *</label>
+                <input type="number" name="company_size" value="{{ company.company_size or ''}}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Founded in *</label>
+                <input type="number" name="founded_year" min="1900" value="{{ company.founded_year or ''}}" required>
+            </div>
+
+            <div class="form-group">
+                <label>GST No. *</label>
+                <input type="text" name="gst_number" value="{{ company.gst_number or ''}}" required>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn-save">Save Changes</button>
+            </div>
+        </form>
+
+      </div>
+    </div>
+
+
+    
+<!-- ================= EDIT contact information ================= -->
+<div id="editContProfileModal" class="modal-overlay">
+    <div class="modal-card">
+
+        <div class="modal-header">
+            <h2>Edit Contact Information</h2>
+            <button class="close-btn" onclick="closeContEditModal()">×</button>
+        </div>
+
+        <form id="editContProfileForm">
+            <div class="form-group">
+                <label>Company Contact *</label>
+                <input type="phone" name="phone" value="{{ company.phone or '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Company Website *</label>
+                <input type="text" name="website" value="{{ company.website or ''}}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Full Address *</label>
+                <input type="text" name="address" value="{{ company.address or ''}}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Contact Person *</label>
+                <input type="text" name="contact_person" value="{{ company.contact_person or ''}}" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Contact Person Designation *</label>
+                <input type="text" name="contact_designation" value="{{ company.contact_designation or ''}}" required>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn-save">Save Changes</button>
+            </div>
+        </form>
+
+      </div>
+    </div>
+
+<script src="{{ url_for('static', filename='js/companyprofile.js')}}"></script>
+</body>
+</html>
