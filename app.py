@@ -9,13 +9,14 @@ import uuid
 from flask import Flask
 from database import db
 import config
+import json
 
 from flask import flash
 app = Flask(__name__)
 app.config.from_object(config)
 db.init_app(app)
 
-from models import Worker , WorkExperience, Certification, Education ,Company  # import AFTER db.init_app
+from models import Worker , WorkExperience, Certification, Education ,Company,sellitem  # import AFTER db.init_app
 
 
 @app.route("/")
@@ -395,6 +396,78 @@ def update_company_contact():
     db.session.commit()
     return jsonify(success=True)
 
+# ========================= TRADE =============================
+UPLOAD_FOLDER = "static/uploads/sell_items"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/company/additem", methods=["GET", "POST"])
+def add_selling_item():
+
+    if session.get("user_type") != "company":
+        return redirect(url_for("home"))
+
+    if request.method == "POST":
+        # ---------- FORM DATA ----------
+        sell_name = request.form.get("sell_name")
+        sell_category = request.form.get("sell_category")
+        sell_quantity_raw = request.form.get("sell_quantity")
+        sell_location = request.form.get("sell_location")
+        sell_price_raw = request.form.get("sell_price")
+        sell_description = request.form.get("sell_description")
+
+        files = request.files.getlist("sell_images[]")
+
+        # ---------- VALIDATION ----------
+        if not all([sell_name, sell_quantity_raw, sell_price_raw, sell_description]):
+            return "All required fields must be filled", 400
+
+        # ---------- CLEAN PRICE ----------
+        price_match = re.search(r'[\d.]+', sell_price_raw.replace(',', ''))
+        if not price_match:
+            return "Invalid price format", 400
+        sell_price = float(price_match.group())
+
+        # ---------- CLEAN QUANTITY ----------
+        qty_match = re.search(r'\d+', sell_quantity_raw)
+        if not qty_match:
+            return "Invalid quantity format", 400
+        sell_quantity = int(qty_match.group())
+
+        # ---------- SAVE IMAGES ----------
+        image_filenames = []
+
+        for file in files:
+            if file and file.filename != "" and allowed_file(file.filename):
+                ext = os.path.splitext(file.filename)[1]
+                filename = f"{uuid.uuid4().hex}{ext}"
+                file.save(os.path.join(UPLOAD_FOLDER, filename))
+                image_filenames.append(filename)
+
+
+        # ---------- CREATE DB ENTRY ----------
+        sell_item = sellitem(
+            sell_name=sell_name,
+            sell_category=sell_category or "General",
+            sell_quantity=sell_quantity,
+            sell_price=sell_price,
+            sell_description=sell_description,
+            sell_image=json.dumps(image_filenames),  # ✅ MULTIPLE IMAGES
+            created_at=datetime.utcnow()
+        )
+
+        db.session.add(sell_item)
+        db.session.commit()
+
+    
+    return redirect(url_for("companyprofile"))
+    
+
 @app.route('/signup')
 def signup():
     return render_template("signup.html")
@@ -461,6 +534,9 @@ def logout():
 #     job_category = db.Column(db.String(128), nullable=False)
 #     job_location = db.Column(db.String(128), nullable=False)
 #     job_specific_location = db.Column(db.String(128), nullable=False)
+#     job_start_time = db.Column(Time, nullable=False) 
+#     job_end_time = db.Column(Time, nullable=False)              ================= job start time and end time ====================
+#     job_opening_no = db.Column(db.Integer , nullable=False)               ================= job openings no ====================
 #     job_experience = db.Column(db.String(128), nullable=False)
 #     job_shift = db.Column(db.String(128), nullable=False)
 #     job_salary = db.Column(db.String(128), nullable=False)

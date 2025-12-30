@@ -67,3 +67,38 @@ document.getElementById("editContProfileForm").addEventListener("submit", functi
         }
     });
 });
+
+
+  /* Profit Trade item form edit pop-up*/
+function openTradeEditModal() {
+    document.getElementById("editTradeProfileModal").style.display = "flex";
+}
+
+function closeTradeEditModal() {
+    document.getElementById("editTradeProfileModal").style.display = "none";
+}
+
+document.getElementById("editTradeProfileForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    // 🔍 DEBUG — MUST SHOW languages
+    console.log("FORM DATA:");
+    for (let pair of formData.entries()) {
+    console.log(pair[0], pair[1]);
+    }
+
+    fetch("/company/additem", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("Product Added successfully");
+            location.reload();
+        } else {
+            alert(data.message || "Update failed");
+        }
+    });
+});

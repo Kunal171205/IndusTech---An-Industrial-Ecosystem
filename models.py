@@ -1,7 +1,10 @@
 from enum import unique
 from database import db
 from datetime import datetime
-
+from sqlalchemy import create_engine, Column, Integer, Time
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+Base = declarative_base()
 
 # ================= WORKER MODELS ===============================
 class Worker(db.Model):
@@ -118,4 +121,20 @@ class Company(db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+
+class sellitem(db.Model):
+    __tablename__ = 'sell_item'
+    sell_id = db.Column(db.Integer, primary_key=True)
+    sell_name = db.Column(db.String(80), nullable=False) #
+    sell_price = db.Column(db.Float, nullable=False)
+    sell_quantity = db.Column(db.Integer, nullable=False)
+    sell_description = db.Column(db.Text, nullable=False)                      #
+    sell_image = db.Column(db.Text, nullable=True)  # Made optional for now
+    sell_category = db.Column(db.String(80), nullable=True)  # Category field     #
+
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<sellitem {self.sell_name} - ₹{self.sell_price}>"
 
