@@ -2,6 +2,7 @@ from enum import unique
 from flask import Flask, render_template, request, redirect, session, url_for , jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from sqlalchemy import Time
 import os
 import re
 from werkzeug.utils import secure_filename
@@ -16,7 +17,7 @@ app = Flask(__name__)
 app.config.from_object(config)
 db.init_app(app)
 
-from models import Worker , WorkExperience, Certification, Education ,Company,sellitem  # import AFTER db.init_app
+from models import Worker , WorkExperience, Certification, Education ,Company, JobPost, sellitem  # import AFTER db.init_app
 
 
 @app.route("/")
@@ -30,7 +31,43 @@ def industrymap():
 
 @app.route('/jobportal')
 def jobportal():
-    return render_template('jobportal.html')
+
+    page = request.args.get("page", 1, type=int)
+    per_page = 12
+
+    pagination = JobPost.query \
+        .filter_by(status="Active") \
+        .order_by(JobPost.created_at.desc()) \
+        .paginate(page=page, per_page=per_page, error_out=False)
+
+    jobs = pagination.items
+
+    return render_template(
+        'jobportal.html',
+        jobs=jobs,
+        pagination=pagination
+    )
+
+@app.route("/job/<int:job_id>")
+def job_details(job_id):
+    job = JobPost.query.get_or_404(job_id)
+    return render_template("jobvisit.html", job=job)
+
+
+@app.route("/company/<int:company_id>")
+def companyprofile_public(company_id):
+    company = Company.query.get_or_404(company_id)
+    jobs = JobPost.query.filter_by(
+        company_id=company.id,
+        status="Active"
+    ).all()
+
+    return render_template(
+        "company.html",
+        company=company,
+        jobs=jobs
+    )
+
 
 @app.route('/trade')
 def trade():
@@ -40,6 +77,49 @@ def trade():
 @app.route('/login')
 def login():
     return render_template('login.html')
+
+@app.route("/login/worker", methods=["POST"])
+def login_worker():
+    phone = request.form.get("phone")
+    password = request.form.get("password")
+
+    if not phone or not password:
+        flash("All fields are required", "error")
+        return redirect(url_for("login"))
+
+    worker = Worker.query.filter_by(phone_no=phone).first()
+
+    if not worker or worker.password != password:
+        flash("Invalid phone number or password", "error")
+        return redirect(url_for("login"))
+
+    # ---------- SESSION ----------
+    session.clear()
+    session["worker_id"] = worker.id
+    session["user_type"] = "worker"
+
+    return redirect(url_for("workerprofile"))
+
+@app.route("/login/company", methods=["POST"])
+def login_company():
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not email or not password:
+        flash("All fields are required", "error")
+        return redirect(url_for("login"))
+
+    company = Company.query.filter_by(email=email).first()
+
+    if not company or company.password != password:
+        flash("Invalid email or password", "error")
+        return redirect(url_for("login"))
+
+    session.clear()
+    session["company_id"] = company.id
+    session["user_type"] = "company"
+
+    return redirect(url_for("companyprofile"))
 
 # ======================== WORKER =========================
 @app.route("/signup/worker", methods=["POST"])
@@ -396,6 +476,145 @@ def update_company_contact():
     db.session.commit()
     return jsonify(success=True)
 
+# ========================= JOB POST ==========================
+@app.route("/company/job", methods=["POST"])
+def create_or_edit_job():
+    if session.get("user_type") != "company":
+        return redirect(url_for("login"))
+
+    job_id = request.form.get("job_id")
+
+    # -------- Job Type --------
+    job_type = request.form.get("job_type")
+    if job_type == "Other":
+        job_type = request.form.get("job_type_other")
+
+    # -------- Shift --------
+    shift = request.form.get("shift")
+    if shift == "Other":
+        shift = request.form.get("shift_other")
+
+    # -------- Convert TIME --------
+    job_start_time = datetime.strptime(
+        request.form.get("job_start_time"), "%H:%M"
+    ).time()
+
+    job_end_time = datetime.strptime(
+        request.form.get("job_end_time"), "%H:%M"
+    ).time()
+
+    if job_id:
+        # ===== EDIT JOB =====
+        job = JobPost.query.get(job_id)
+
+        job.job_title = request.form.get("job_title")
+        job.job_type = job_type
+        job.city = request.form.get("city")
+        job.specific_location = request.form.get("specific_location")
+        job.shift = shift
+        job.job_start_time = job_start_time
+        job.job_end_time = job_end_time
+        job.job_opening_no = int(request.form.get("job_opening_no"))
+        job.salary = request.form.get("salary")
+        job.description = request.form.get("description")
+        job.job_contact = request.form.get("job_contact")
+
+    else:
+        # ===== CREATE JOB =====
+        job = JobPost(
+            company_id=session["company_id"],
+            job_title=request.form.get("job_title"),
+            job_type=job_type,
+            city=request.form.get("city"),
+            specific_location=request.form.get("specific_location"),
+            shift=shift,
+            job_start_time=job_start_time,
+            job_end_time=job_end_time,
+            job_opening_no=int(request.form.get("job_opening_no")),
+            salary=request.form.get("salary"),
+            description=request.form.get("description"),
+            job_contact=request.form.get("job_contact"),
+        )
+
+        db.session.add(job)
+
+    db.session.commit()
+    return redirect(url_for("companyprofile"))
+
+
+
+@app.route("/apply", methods=["GET", "POST"])
+def applyjob():
+
+    if session.get("user_type") != "worker":
+        return redirect(url_for("dashboard"))
+
+    worker_id = session.get("worker_id")
+    if not worker_id:
+        return redirect(url_for("login"))
+
+    worker = Worker.query.get(worker_id)
+
+    job_id = request.args.get("job_id") if request.method == "GET" else request.form.get("job_id")
+    if not job_id:
+        return redirect(url_for("jobportal"))
+
+    job_id = int(job_id)
+
+    job = JobPost.query.get(job_id)
+    if not job:
+        return "Job not found", 404
+
+    # ---------- POST ----------
+    if request.method == "POST":
+
+        applicant_name = request.form.get("applicant_name") or worker.username
+        applicant_email = request.form.get("applicant_email") or worker.email
+        applicant_phone = request.form.get("applicant_phone") or worker.phone_no
+
+        applicant_age = request.form.get("applicant_age")
+        applicant_gender = request.form.get("applicant_gender") or worker.gender
+        applicant_skill = request.form.get("applicant_skill")
+        applicant_location = request.form.get("applicant_location")
+
+        if not all([
+            applicant_age, applicant_gender, applicant_skill, applicant_location
+        ]):
+            return "All fields are required", 400
+
+        # ✅ FIX: int job_id
+        existing_application = Application.query.filter_by(
+            job_id=job_id,
+            worker_id=worker_id
+        ).first()
+
+        if existing_application:
+            return "You have already applied for this job", 400
+
+        application = Application(
+            job_id=job_id,
+            worker_id=worker_id,
+            applicant_name=applicant_name,
+            applicant_email=applicant_email,
+            applicant_phone=applicant_phone,
+            applicant_age=int(applicant_age),
+            applicant_gender=applicant_gender,
+            applicant_skill=applicant_skill,
+            applicant_location=applicant_location,
+            aadhar_card=worker.aadhar_card,
+            pan_card=worker.pan_card,
+            resume=worker.resume
+        )
+
+        db.session.add(application)
+        db.session.commit()
+
+        return redirect(url_for("workerprofile"))
+
+    # ---------- GET ----------
+    return render_template("apply-job.html", job=job, worker=worker)
+
+
 # ========================= TRADE =============================
 UPLOAD_FOLDER = "static/uploads/sell_items"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -522,12 +741,10 @@ def logout():
 #     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-
 # class JobPOST(db.Model):
 #     __tablename__ = "job_post"
 
 #     job_id = db.Column(db.Integer, primary_key=True)
-
 #     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
 
 #     job_title = db.Column(db.String(80), nullable=False)
@@ -635,240 +852,7 @@ def logout():
 #     return redirect(url_for("logintype"))
 
 
-# @app.route("/logintype")
-# def logintype():
-#     return render_template("LoginHomePage.html")
 
-
-# # ===================== SIGNUP =====================
-# @app.route("/signup", methods=["GET", "POST"])
-# def signup():
-#     if request.method == "GET":
-#         return render_template("signup.html")
-
-#     username = request.form.get("username")
-#     email = request.form.get("email")
-#     password = request.form.get("password")
-#     phone_no = request.form.get("phone_no")
-
-#     if not all([username, email, password, phone_no]):
-#         return "All fields are required", 400
-
-   
-#     existing = Worker.query.filter_by(username=username).first()
-#     if existing:
-#         return "Username already taken", 400
-
-#     worker = Worker(
-#         username=username,
-#         email=email,
-#         password=password,
-#         phone_no=phone_no
-#     )
-
-#     db.session.add(worker)
-#     db.session.commit()
-
-#     session["worker_id"] = worker.id
-#     session["user_type"] = "worker"
-
-#     return redirect(url_for("workerprofile"))
-
-
-
-# # ================= BUSINESS SIGNUP =================
-# @app.route("/businesssignup", methods=["GET", "POST"])
-# def businesssignup():
-
-#     # ---------- SHOW FORM ----------
-#     if request.method == "GET":
-#         return render_template("signup-business.html")
-
-#     # ---------- READ FORM DATA ----------
-#     email = request.form.get("email")
-#     password = request.form.get("password")
-#     company_name = request.form.get("company_name")
-#     company_category = request.form.get("company_category")
-#     company_location = request.form.get("company_location")
-#     company_contact = request.form.get("company_contact")
-#     company_address = request.form.get("company_address")
-#     company_website = request.form.get("company_website")
-
-#     # ---------- VALIDATION ----------
-#     if not all([
-#         email, password, company_name,
-#         company_category, company_location,
-#         company_contact, company_address
-#     ]):
-#         return "All required fields must be filled", 400
-
-#     # ---------- DUPLICATE EMAIL CHECK ----------
-#     existing_company = Company.query.filter_by(email=email).first()
-#     if existing_company:
-#         return "Company already registered with this email", 400
-
-#     # ---------- CREATE COMPANY ----------
-#     company = Company(
-#         email=email,
-#         password=password,  # (hash later)
-#         company_name=company_name,
-#         company_category=company_category,
-#         company_location=company_location,
-#         company_contact=company_contact,
-#         company_address=company_address,
-#         company_website=company_website
-#     )
-
-#     db.session.add(company)
-#     db.session.commit()
-
-#     # ---------- SESSION ----------
-#     session.clear()
-#     session["company_id"] = company.id
-#     session["user_type"] = "company"
-
-#     return redirect(url_for("companyprofile"))
-
-
-
-
-# # ===================== LOGIN =====================
-# @app.route("/loginpage", methods=["GET", "POST"])
-# def login():
-#     user_type = request.args.get("user_type")
-
-#     if request.method == "GET":
-#         if user_type not in ["worker", "company"]:
-#             return redirect(url_for("logintype"))
-#         return render_template("login.html", user_type=user_type)
-
-#     email = request.form.get("email")
-#     password = request.form.get("password")
-
-#     # ---------- WORKER LOGIN ----------
-#     if user_type == "worker":
-#         worker = Worker.query.filter_by(email=email).first()
-#         if worker and worker.password == password:
-#             session["worker_id"] = worker.id
-#             session["user_type"] = "worker"
-#             return redirect(url_for("workerprofile"))
-
-#     # ---------- COMPANY LOGIN ----------
-#     if user_type == "company":
-#         company = Company.query.filter_by(email=email).first()
-#         if company and company.password == password:
-#             session["company_id"] = company.id
-#             session["user_type"] = "company"
-#             return redirect(url_for("companyprofile"))
-
-#     return "Invalid credentials", 401
-
-
-
-# # ===================== USER (WORKER) ROUTES =====================
-# @app.route("/workerprofile")
-# def workerprofile():
-#     if session.get("user_type") != "worker":
-#         return redirect(url_for("login"))
-
-#     worker = Worker.query.get(session["worker_id"])
-
-#     applications = Application.query.filter_by(
-#         worker_id=worker.id
-#     ).all()
-
-#     return render_template(
-#         "worker-profile.html",
-#         worker=worker,
-#         applications=applications
-#     )
-# @app.route("/worker/upload-documents", methods=["POST"])
-# def upload_worker_documents():
-#     if session.get("user_type") != "worker":
-#         return redirect(url_for("logintype"))
-
-#     worker = Worker.query.get(session.get("worker_id"))
-#     if not worker:
-#         return redirect(url_for("logintype"))
-
-#     upload_folder = "static/uploads"
-#     os.makedirs(upload_folder, exist_ok=True)
-
-#     # -------- AADHAR --------
-#     aadhar = request.files.get("aadhar_card")
-#     if aadhar and aadhar.filename:
-#         aadhar_filename = f"{uuid.uuid4()}_{secure_filename(aadhar.filename)}"
-#         aadhar.save(os.path.join(upload_folder, aadhar_filename))
-#         worker.aadhar_card = aadhar_filename
-
-#     # -------- PAN --------
-#     pan = request.files.get("pan_card")
-#     if pan and pan.filename:
-#         pan_filename = f"{uuid.uuid4()}_{secure_filename(pan.filename)}"
-#         pan.save(os.path.join(upload_folder, pan_filename))
-#         worker.pan_card = pan_filename
-
-#     # -------- RESUME --------
-#     resume = request.files.get("resume")
-#     if resume and resume.filename:
-#         resume_filename = f"{uuid.uuid4()}_{secure_filename(resume.filename)}"
-#         resume.save(os.path.join(upload_folder, resume_filename))
-#         worker.resume = resume_filename
-
-#     # -------- KYC STATUS --------
-#     if worker.aadhar_card and worker.pan_card:
-#         worker.kyc_status = "submitted"
-#         session.pop("kyc_started", None)
-
-
-#     db.session.commit()
-#     flash("Document uploaded successfully.", "success")
-
-#     return redirect(url_for("workerprofile"))
-
-# @app.route("/worker/start-kyc")
-# def start_kyc():
-#     session["kyc_started"] = True
-#     return "", 204
-
-# from flask import request, jsonify, session
-
-# @app.route("/worker/update-profile", methods=["POST"])
-# def update_worker_profile():
-#     try:
-#         # ✅ Correct session check
-#         if session.get("user_type") != "worker":
-#             return jsonify(success=False, message="Not logged in")
-
-#         worker_id = session.get("worker_id")
-#         if not worker_id:
-#             return jsonify(success=False, message="Worker session missing")
-
-#         data = request.get_json()
-#         if not data:
-#             return jsonify(success=False, message="No data received")
-
-#         worker = Worker.query.get(worker_id)
-#         if not worker:
-#             return jsonify(success=False, message="Worker not found")
-
-#         # Update fields
-#         worker.username = data.get("username", worker.username)
-#         worker.email = data.get("email", worker.email)
-#         worker.phone_no = data.get("phone_no", worker.phone_no)
-
-#         db.session.commit()
-
-#         return jsonify(
-#             success=True,
-#             username=worker.username,
-#             email=worker.email,
-#             phone_no=worker.phone_no
-#         )
-
-#     except Exception as e:
-#         print("UPDATE ERROR:", e)
-#         return jsonify(success=False, message=str(e))
 
 # @app.route("/jobportal")
 # def jobportal():
@@ -886,86 +870,6 @@ def logout():
 #     # Fetch all jobs from database
 #     jobs = JobPOST.query.all()
 #     return render_template("job-portal.html", jobs=jobs)
-
-
-# @app.route("/apply", methods=["GET", "POST"])
-# def applyjob():
-
-#     if session.get("user_type") != "worker":
-#         return redirect(url_for("dashboard"))
-
-#     worker_id = session.get("worker_id")
-#     if not worker_id:
-#         return redirect(url_for("login"))
-
-#     worker = Worker.query.get(worker_id)
-
-#     job_id = request.args.get("job_id") if request.method == "GET" else request.form.get("job_id")
-#     if not job_id:
-#         return redirect(url_for("jobportal"))
-
-#     job_id = int(job_id)
-
-#     job = JobPOST.query.get(job_id)
-#     if not job:
-#         return "Job not found", 404
-
-#     # ---------- POST ----------
-#     if request.method == "POST":
-
-#         applicant_name = request.form.get("applicant_name") or worker.username
-#         applicant_email = request.form.get("applicant_email") or worker.email
-#         applicant_phone = request.form.get("applicant_phone") or worker.phone_no
-
-#         applicant_age = request.form.get("applicant_age")
-#         applicant_gender = request.form.get("applicant_gender")
-#         applicant_skill = request.form.get("applicant_skill")
-#         applicant_experience = request.form.get("applicant_experience")
-#         applicant_expected_salary = request.form.get("applicant_expected_salary")
-#         applicant_preferred_shift = request.form.get("applicant_preferred_shift")
-#         applicant_location = request.form.get("applicant_location")
-
-#         if not all([
-#             applicant_age, applicant_gender, applicant_skill,
-#             applicant_experience, applicant_expected_salary,
-#             applicant_location, applicant_preferred_shift
-#         ]):
-#             return "All fields are required", 400
-
-#         # ✅ FIX: int job_id
-#         existing_application = Application.query.filter_by(
-#             job_id=job_id,
-#             worker_id=worker_id
-#         ).first()
-
-#         if existing_application:
-#             return "You have already applied for this job", 400
-
-#         application = Application(
-#             job_id=job_id,
-#             worker_id=worker_id,
-#             applicant_name=applicant_name,
-#             applicant_email=applicant_email,
-#             applicant_phone=applicant_phone,
-#             applicant_age=int(applicant_age),
-#             applicant_gender=applicant_gender,
-#             applicant_skill=applicant_skill,
-#             applicant_experience=applicant_experience,
-#             applicant_expected_salary=applicant_expected_salary,
-#             applicant_location=applicant_location,
-#             applicant_preferred_shift=applicant_preferred_shift,
-#             aadhar_card=worker.aadhar_card,
-#             pan_card=worker.pan_card,
-#             resume=worker.resume
-#         )
-
-#         db.session.add(application)
-#         db.session.commit()
-
-#         return redirect(url_for("workerprofile"))
-
-#     # ---------- GET ----------
-#     return render_template("apply-job.html", job=job, worker=worker)
 
 # # ===================== BUSINESS ROUTES =====================
 # @app.route("/companyprofile")

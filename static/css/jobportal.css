@@ -305,6 +305,51 @@
     color: #ff8a00;   /* icon color */
     font-size: 14px;
   }
+
+  .job-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  
+  .job-card-link:hover .job-card {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    transform: translateY(-3px);
+    transition: all 0.25s ease;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 25px;
+}
+
+.page-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #0a438b;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.page-btn:hover {
+    background: #0a438b;
+    color: white;
+}
+
+.page-btn.active {
+    background: #0a438b;
+    color: white;
+    pointer-events: none;
+}
+
+.dots {
+    padding: 8px;
+    color: #64748b;
+}
+
   
   /* hover enhancement */
   .job-card:hover .job-meta i {

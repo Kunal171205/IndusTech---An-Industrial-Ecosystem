@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Job Details | IndusTech</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/jobvisit.css') }}" />
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  crossorigin="anonymous"
+/>
+
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}" > <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal') }}" class="active"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{ url_for('trade')}}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <a href ="{{url_for('login')}}" class="login">Login</a>
+    <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
+  </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="container">
+
+    <a href="{{ url_for('jobportal')}}" class="back-to-jobs">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Jobs
+      </a>
+      
+
+  <div class="content-grid">
+
+    <!-- ===== LEFT CARD ===== -->
+    <section class="card job-card">
+
+        <div class="job-header-row">
+
+            <div class="job-header-left">
+              <div class="job-icon">🏭</div>
+              <div>
+                <h1>{{ job.job_title }}</h1>
+                <a href="{{ url_for('companyprofile_public', company_id=job.company.id) }}" class="company-name">
+                  {{ job.company.company_name }}
+                </a>
+              </div>
+            </div>
+          
+            <div class="job-header-actions">
+              <button class="icon-btn" title="Save Job">
+                <i class="fa-regular fa-heart"></i>
+              </button>
+          
+              <button class="icon-btn" id="shareJobBtn"  title="Share Job">
+                <i class="fa-solid fa-share-nodes"></i>
+              </button>
+            </div>
+          
+          </div>
+          
+
+      <div class="salary-box">₹ {{ job.salary }}</div>
+
+      <div class="job-meta">
+        <div class="meta-item">📍 {{ job.city | title }}</div>
+        <div class="meta-item">⏰ {{ job.job_start_time.strftime("%I:%M %p") }}
+          –
+          {{ job.job_end_time.strftime("%I:%M %p") }}</div>
+        <div class="meta-item">👥 {{ job.job_opening_no }} Openings</div>
+        <div class="meta-item">💰 {{ job.shift }}</div>
+      </div>
+
+      <h3>Job Description</h3>
+      <p>
+        {{ job.description }}.
+      </p>
+
+      <!-- <h3>Requirements</h3>
+      <ul class="requirements">
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Age 18–45
+        </li>
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Ability to stand for long hours
+        </li>
+        <li>
+          <i class="fa-solid fa-circle-check"></i>
+          Basic literacy
+        </li>
+      </ul>       -->
+    </section>
+
+    <!-- ===== RIGHT CARD ===== -->
+    <div class="apply-card">
+
+        <h3>Ready to Apply?</h3>
+      
+        <div class="apply-info">
+          <div class="info-row">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>{{ job.city | title }}</span>
+          </div>
+      
+          <div class="info-row">
+            <i class="fa-regular fa-clock"></i>
+            <span>
+              {{ job.job_start_time.strftime("%I:%M %p") }} –
+              {{ job.job_end_time.strftime("%I:%M %p") }}</span>
+          </div>
+        </div>
+      
+        <a href="{{ url_for('applyjob', job_id=job.job_id) }}" class="apply-btn">
+          <i class="fa-regular fa-circle-check"></i> Apply Now
+        </a>
+      
+        <a href="tel:{{ job.job_contact }}" class="contact-btn">
+          <i class="fa-solid fa-phone"></i> Contact Company
+        </a>
+      
+        <p class="posted-date">
+          Posted on {{ job.created_at.strftime("%d %b %Y") }}
+        </p>
+      
+      </div>
+      
+
+  <!-- ===== COMPANY INFO ===== -->
+  <section class="card company-card">
+    <h3>About the Company</h3>
+  
+    <a href="{{ url_for('companyprofile_public', company_id=job.company.id) }}" class="company-link"> 
+        <div class="company-box">
+          <div class="company-icon">
+            <i class="fa-solid fa-industry"></i>
+          </div>
+      
+          <div class="company-details">
+            <h4 class="company-name-title">{{ job.company.company_name }}</h4>
+            <p class="company-type">{{ job.company.company_category or "Industry" }}</p>
+      
+            <div class="company-meta">
+              <span>{{ job.company.company_city | title }}</span>
+              <span>{{ job.company.company_size or "" }}</span>
+            </div>
+          </div>
+        </div>
+      </a>      
+  </section>
+  
+
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses on one unified platform.</p>
+  </div>
+
+  <div>
+    <h4>Quick Links</h4>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </div>
+
+  <div>
+    <h4>For Users</h4>
+    <a href="#">Register as Worker</a>
+    <a href="#">Register as Company</a>
+    <a href="#">Find Jobs</a>
+  </div>
+
+  <div>
+    <h4>Contact Us</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+
+<script>
+    document.getElementById("shareJobBtn").addEventListener("click", async () => {
+      const shareData = {
+        title: "Production Helper - IndusTech",
+        text: "Check out this job opening at ABC Manufacturing Pvt Ltd",
+        url: window.location.href
+      };
+  
+      // ✅ Modern mobile & supported browsers
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          console.log("Share cancelled");
+        }
+      } 
+      // 🧠 Desktop fallback
+      else {
+        navigator.clipboard.writeText(shareData.url);
+        alert("Job link copied to clipboard!");
+      }
+    });
+  </script>
+  
+</body>
+</html>

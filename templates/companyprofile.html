@@ -70,8 +70,9 @@
                 {% endif %}
                 </div>
                 <div class="profile-actions">
-                    <button class="btn-edit-profile"><i class="fas fa-edit"></i> Edit Profile</button>
-                    <button class="btn-create-job" onclick="openTradeEditModal()"><i class="fas fa-plus"></i> Create Job</button>
+                    <!-- <button class="btn-edit-profile"><i class="fas fa-edit"></i> Edit Profile</button> -->
+                    <button class="btn-edit-profile" onclick="openJobModal()"><i class="fas fa-plus"></i> Create Job</button>
+                    <button class="btn-create-job" onclick="openTradeEditModal()"><i class="fas fa-plus"></i> Trade Post</button>
                 </div>
             </div>
         </div>
@@ -158,43 +159,55 @@
                 <!-- Active Jobs -->
                 <div class="profile-card">
                     <h3><i class="fas fa-briefcase"></i> Active Job Postings</h3>
+                    <div class="trade-history">
                     <div class="jobs-list">
+                        {% for job in company.jobs %}
                         <div class="job-item">
-                            <div class="job-header">
-                                <h4>Production Worker</h4>
-                                <span class="job-status active">Active</span>
-                            </div>
-                            <div class="job-details">
-                                <span><i class="fas fa-users"></i> 5 positions</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Mumbai</span>
-                                <span><i class="fas fa-rupee-sign"></i> ₹300/day</span>
-                            </div>
-                            <div class="job-actions">
-                                <button class="btn-view-applications">View Applications (12)</button>
-                                <button class="btn-edit-job">Edit</button>
-                            </div>
+                      
+                          <div class="job-header">
+                            <h4>{{ job.job_title }}</h4>
+                            <span class="job-status {{ job.status|lower }}">{{ job.status }}</span>
+                          </div>
+                      
+                          <div class="job-details">
+                            <span><i class="fas fa-briefcase"></i> {{ job.job_type }}</span>
+                            <span><i class="fas fa-map-marker-alt"></i> {{ job.city }}</span>
+                            <span><i class="fas fa-users"></i> {{ job.job_opening_no }} Openings</span>
+                            <span><i class="fas fa-clock"></i> {{ job.shift }}</span>
+                            <span><i class="fas fa-rupee-sign"></i> {{ job.salary }}</span>
+                          </div>
+                      
+                      
+                          <div class="job-actions">
+                            <button class="btn-edit-job"
+                              onclick="editJob(
+                                '{{ job.id }}',
+                                '{{ job.job_title }}',
+                                '{{ job.job_type }}',
+                                '{{ job.city }}',
+                                '{{ job.specific_location }}',
+                                '{{ job.shift }}',
+                                '{{ job.job_start_time.strftime('%H:%M') }}',
+                                '{{ job.job_end_time.strftime('%H:%M') }}',
+                                '{{ job.salary }}',
+                                '{{ job.job_opening_no }}',
+                                '{{ job.job_contact }}',
+                                `{{ job.description }}`
+                              )">
+                              Edit
+                            </button>
+                          </div>
+                        
                         </div>
-
-                        <div class="job-item">
-                            <div class="job-header">
-                                <h4>Quality Control Inspector</h4>
-                                <span class="job-status active">Active</span>
-                            </div>
-                            <div class="job-details">
-                                <span><i class="fas fa-users"></i> 2 positions</span>
-                                <span><i class="fas fa-map-marker-alt"></i> Mumbai</span>
-                                <span><i class="fas fa-rupee-sign"></i> ₹400/day</span>
-                            </div>
-                            <div class="job-actions">
-                                <button class="btn-view-applications">View Applications (8)</button>
-                                <button class="btn-edit-job">Edit</button>
-                            </div>
-                        </div>
+                        {% else %}
+                          <p>No jobs posted yet.</p>
+                        {% endfor %}
+                    </div>
                     </div>
                 </div>
 
                 <!-- Worker Applications -->
-                <div class="profile-card">
+                <!-- <div class="profile-card">
                     <h3><i class="fas fa-user-check"></i> Recent Applications</h3>
                     <div class="applications-list">
                         <div class="application-item">
@@ -245,7 +258,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- B2B Trade History -->
                 <div class="profile-card">
@@ -479,6 +492,94 @@
       </div>
     </div>
 
+<!-- ================= CREATE / EDIT JOB MODAL ================= -->
+<div id="jobModal" class="modal-overlay" style="display: none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="jobModalTitle">Post a Job</h2>
+        <button class="close-btn" onclick="closeJobModal()">×</button>
+      </div>
+  
+      <form method="POST" action="/company/job">
+  
+        <input type="hidden" name="job_id" id="job_id" />
+  
+        <div class="form-group">
+          <label>Job Title *</label>
+          <input type="text" name="job_title" id="job_title" required />
+        </div>
+        
+        <div class="form-group">
+            <label>Job Type *</label>
+            <select name="job_type" id="job_type" onchange="toggleOtherJob()" required >
+              <option>Helper</option>
+              <option>Production Worker</option>
+              <option>Housekeeping</option>
+              <option>Security</option>
+              <option value="Other">Other</option>
+            </select>
+    
+            <input type="text" name="job_type_other" id="job_type_other" placeholder="Enter job type" style="display: none; margin-top: 8px"/>
+        </div>
+
+        <div class="form-group">
+            <label> Job Description *</label>
+            <br>
+            <textarea name="description" id="description" rows="4" required ></textarea>
+        </div>
+          
+        <div class="form-group">
+          <label>City Location *</label>
+          <input type="text" name="city" id="city" placeholder="e.g. Pune, Nagpur" required />
+        </div>
+
+        <div class="form-group">
+            <label>Full Address *</label>
+            <input type="text" name="specific_location" id="specific_location" placeholder="e.g. Swapnpurti Phase 1, Sector No.26, pradhikaran, Nigdi, Pune-411044" required />
+        </div>
+        
+        <div class="form-group">
+          <label>Job Shift *</label>
+          <select name="shift" id="shift" onchange="toggleOtherShift()" required >
+            <option>Full Time</option>
+            <option>Part Time</option>
+            <option value="Other">Other</option>
+          </select>
+  
+          <input type="text" name="shift_other" id="shift_other" placeholder="Enter shift" style="display: none; margin-top: 8px"/>
+        </div>
+        
+        <div class="form-group">
+            <label>Shift Start time *</label>
+            <input type="time" name="job_start_time" id="job_start_time" required />
+        </div>
+        
+        <div class="form-group">
+            <label>Shift End time *</label>
+            <input type="time" name="job_end_time" id="job_end_time" required />
+        </div>
+        
+        <div class="form-group">
+          <label>Salary *</label>
+          <input type="text" name="salary" id="salary" placeholder="₹400/day" required/>
+        </div>
+  
+        <div class="form-group">
+            <label>No. of openings *</label>
+            <input type="number" name="job_opening_no" id="job_opening_no" required/>
+        </div>
+  
+        <div class="form-group">
+            <label>Whom to contact *</label>
+            <input type="tel" name="job_contact" id="job_contact" required/>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn-save">Save Job</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 <!-- ================ Add Trade ================= -->
 <div id="editTradeProfileModal" class="modal-overlay">

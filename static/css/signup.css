@@ -210,20 +210,40 @@ body {
     cursor: pointer;
     margin-top: 10px;
 }
-
-.login-link {
+.signup-link {
     text-align: center;
-    margin-top: 20px;
-    font-size: 14px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 8px;
 }
 
-.login-link a {
+.signup-link a {
     color: var(--primary-blue);
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
 }
 
+.signup-link a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-blue);
+    transition: width 0.3s ease;
+}
 
+.signup-link a:hover::after {
+    width: 100%;
+}
+
+.signup-link a:hover {
+    color: var(--dark-blue);
+    transform: translateY(-1px);
+}
 /* Right Side - Info */
 .info-side {
     flex: 1;

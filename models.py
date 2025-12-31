@@ -122,6 +122,60 @@ class Company(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+# ================= JOB POST MODEL ===============================
+class JobPost(db.Model):
+    __tablename__ = "job_post"
+
+    job_id = db.Column(db.Integer, primary_key=True)
+
+    company_id = db.Column(
+        db.Integer,
+        db.ForeignKey("company.id"),
+        nullable=False
+    )
+
+    job_title = db.Column(db.String(120), nullable=False)#
+    job_type = db.Column(db.String(120), nullable=False)#
+    city = db.Column(db.String(120), nullable=False)#
+    specific_location = db.Column(db.String(128), nullable=False)#
+    shift = db.Column(db.String(50), nullable=False)#
+    job_start_time = db.Column(Time, nullable=False) #
+    job_end_time = db.Column(Time, nullable=False) #
+    job_opening_no = db.Column(db.Integer , nullable=False)      # Day / Night / General / Part Time
+    salary = db.Column(db.String(50), nullable=False)#
+    description = db.Column(db.Text, nullable=False) #
+    job_contact = db.Column(db.String(28), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default="Active")
+
+    company = db.relationship("Company", backref="jobs")
+
+
+class Application(db.Model):
+    application_id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('job_post.job_id'), nullable=False)
+    applicant_name = db.Column(db.String(80), nullable=False)
+    applicant_email = db.Column(db.String(120), nullable=True)
+    applicant_phone = db.Column(db.String(20), nullable=False)
+    applicant_age = db.Column(db.Integer, nullable=False)
+    applicant_gender = db.Column(db.String(20), nullable=False)
+    applicant_skill = db.Column(db.String(120), nullable=False)
+    applicant_location = db.Column(db.String(120), nullable=False)
+    applicant_status = db.Column(db.String(20), nullable=False, default="pending")
+    application_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    worker_id = db.Column(db.Integer, db.ForeignKey("worker.id"), nullable=False)
+
+    aadhar_card = db.Column(db.String(200), nullable=True)
+    pan_card = db.Column(db.String(200), nullable=True)
+    resume = db.Column(db.String(200), nullable=True)
+
+  # Link to user who applied
+
+    # Relationship to JobPOST
+    job = db.relationship('JobPost', backref='applications')
+
+    def __repr__(self):
+        return f"<Application {self.applicant_name} for Job {self.job_id}>"
 
 class sellitem(db.Model):
     __tablename__ = 'sell_item'

@@ -86,7 +86,7 @@
 <!-- JOB LIST -->
 <section class="jobs-section">
   <div class="jobs-header">
-    <h3>6 Jobs Found</h3>
+    <h3>{{ pagination.total }} Jobs Found</h3>
     <select>
       <option>Newest First</option>
       <option>Salary High to Low</option>
@@ -94,66 +94,50 @@
   </div>
 
   <div class="jobs-grid">
-
-    <div class="job-card urgent" data-category="Housekeeping" data-distance="2.5">
-      <h4>Factory Housekeeping Staff</h4>
-      <p class="company">ABC Manufacturing Pvt Ltd</p>
-      <div class="salary">₹300/day</div>
-      <div class="job-meta">
-        <span><i class="fa-solid fa-location-dot"></i> 2.5 km away</span>
-        <span><i class="fa-regular fa-clock"></i> 8:00 AM – 4:00 PM</span>
-        <span><i class="fa-solid fa-users"></i> 3 positions</span>
-      </div>      
-    </div>
-
-    <div class="job-card urgent" data-category="Production" data-distance="2.5">
-      <h4>Production Helper</h4>
-      <p class="company">ABC Manufacturing Pvt Ltd</p>
-      <div class="salary">₹400/day</div>
-      <div class="job-meta">
-        <span><i class="fa-solid fa-location-dot"></i> 2.5 km away</span>
-        <span><i class="fa-regular fa-clock"></i> 9:00 AM – 6:00 PM</span>
-        <span><i class="fa-solid fa-users"></i> 5 positions</span>
-      </div> 
-    </div>
-
-    <div class="job-card urgent" data-category="Security" data-distance="5">
-      <h4>Security Guard</h4>
-      <p class="company">XYZ Textiles</p>
-      <div class="salary">₹12000/month</div>
-      <div class="job-meta">
-        <span><i class="fa-solid fa-location-dot"></i> 5 km away</span>
-        <span><i class="fa-regular fa-clock"></i> 8:00 AM – 6:00 PM</span>
-        <span><i class="fa-solid fa-users"></i> 2 positions</span>
-      </div> 
-    </div>
-
+    {% for job in jobs %}
+    <a href="{{ url_for('job_details', job_id=job.job_id) }}" class="job-card-link">
     <div class="job-card urgent">
-      <h4>Cleaning Staff</h4>
-      <p class="company">PharmaCure Industries</p>
-      <div class="salary">₹350/day</div>
+      <h4>{{ job.job_title | capitalize }}</h4>
+      <p class="company">{{ job.company.company_name }}</p>
+  
+      <div class="salary">Rs. {{ job.salary }}</div>
+  
       <div class="job-meta">
-        <span><i class="fa-solid fa-location-dot"></i> 8 km away</span>
-        <span><i class="fa-regular fa-clock"></i> 7:00 AM – 4:00 PM</span>
-        <span><i class="fa-solid fa-users"></i> 4 positions</span>
-      </div> 
+        <span><i class="fa-solid fa-location-dot"></i> {{ job.city | capitalize}}</span>
+        <span><i class="fa-regular fa-clock"></i>
+          {{ job.job_start_time.strftime("%I:%M %p") }} –
+          {{ job.job_end_time.strftime("%I:%M %p") }}
+        </span>
+        <span><i class="fa-solid fa-users"></i>
+          {{ job.job_opening_no }} Positions
+        </span>
+      </div>
     </div>
-
-    <div class="job-card urgent">
-      <h4>Construction Worker</h4>
-      <p class="company">BuildRight Construction</p>
-      <div class="salary">₹500/day</div>
-      <div class="meta">3.5 km • 6:00 AM – 2:00 PM • 10 positions</div>
-    </div>
-
-    <div class="job-card urgent">
-      <h4>Maintenance Helper</h4>
-      <p class="company">ChemTech Solutions</p>
-      <div class="salary">₹450/day</div>
-      <div class="meta">6 km • 9:00 AM – 5:00 PM • 2 positions</div>
-    </div>
-
+    {% else %}
+    <p>No jobs found.</p>
+    {% endfor %}
   </div>
+  
+  <div class="pagination">
+
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('jobportal', page=pagination.prev_num) }}" class="page-btn">
+          ← Previous
+      </a>
+    {% endif %}
+  
+    <span class="page-info">
+        Page {{ pagination.page }} of {{ pagination.pages }}
+    </span>
+  
+    {% if pagination.has_next %}
+      <a href="{{ url_for('jobportal', page=pagination.next_num) }}" class="page-btn">
+          Next →
+      </a>
+    {% endif %}
+  
+  </div>
+  
 </section>
 
 <!-- CTA -->

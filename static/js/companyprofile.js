@@ -69,6 +69,63 @@ document.getElementById("editContProfileForm").addEventListener("submit", functi
 });
 
 
+/* ================= JOB MODAL ================= */
+
+function openJobModal() {
+    document.getElementById("jobModal").style.display = "flex";
+    document.getElementById("jobModalTitle").innerText = "Post a Job";
+    document.querySelector("#jobModal form").reset();
+  }
+  
+  function closeJobModal() {
+    document.getElementById("jobModal").style.display = "none";
+  }
+  
+  function toggleOtherJob() {
+    const v = document.getElementById("job_type").value;
+    document.getElementById("job_type_other").style.display =
+      v === "Other" ? "block" : "none";
+  }
+  
+  function toggleOtherShift() {
+    const v = document.getElementById("shift").value;
+    document.getElementById("shift_other").style.display =
+      v === "Other" ? "block" : "none";
+  }
+  
+  function editJob(
+    id,
+    title,
+    jobType,
+    city,
+    location,
+    shift,
+    startTime,
+    endTime,
+    salary,
+    openings,
+    contact,
+    description
+  ) {
+    document.getElementById("jobModalTitle").innerText = "Edit Job";
+  
+    document.getElementById("job_id").value = id;
+    document.getElementById("job_title").value = title;
+    document.getElementById("job_type").value = jobType;
+    document.getElementById("city").value = city;
+    document.getElementById("specific_location").value = location;
+    document.getElementById("shift").value = shift;
+    document.getElementById("job_start_time").value = startTime;
+    document.getElementById("job_end_time").value = endTime;
+    document.getElementById("salary").value = salary;
+    document.getElementById("job_opening_no").value = openings;
+    document.getElementById("job_contact").value = contact;
+    document.getElementById("description").value = description;
+  
+    document.getElementById("jobModal").style.display = "flex";
+  }
+  
+
   /* Profit Trade item form edit pop-up*/
 function openTradeEditModal() {
     document.getElementById("editTradeProfileModal").style.display = "flex";

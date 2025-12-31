@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ company.company_name }} | IndusTech</title>
+
+  <link rel="stylesheet" href="{{ url_for('static' , filename='css/company.css') }}" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+  />
+</head>
+<body>
+
+<!-- ===== NAVBAR ===== -->
+<header class="navbar">
+  <div class="logo">Indus<span>Tech</span></div>
+
+  <nav class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <a href="#" class="login">Login</a>
+    <a href="#" class="signup">Sign Up</a>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="container">
+
+    <a href="{{ url_for('jobportal') }}" class="back-to-jobs">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Jobs
+      </a>
+      
+
+  <div class="company-grid">
+
+    <!-- ===== LEFT COLUMN ===== -->
+    <div class="company-left">
+
+      <!-- COMPANY OVERVIEW -->
+      <section class="card company-header-card">
+
+        <div class="company-header-top">
+          <div class="company-header-left">
+            <div class="company-avatar">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+      
+            <div class="company-header-info">
+              <h1>
+                {{ company.company_name | capitalize}}
+                <i class="fa-solid fa-circle-check verified-icon"></i>
+              </h1>
+              <p class="industry-text">{{ company.company_type | capitalize }}</p>
+            </div>
+          </div>
+      
+          <div class="company-header-actions">
+            <i class="fa-solid fa-share-nodes"></i>
+          </div>
+        </div>
+      
+        <div class="company-stats-row">
+          {% if company.company_size %}
+          <span>
+            <i class="fa-solid fa-users"></i>
+            {{ company.company_size }} employees
+          </span>
+          {% endif %}
+      
+          {% if company.founded_year %}
+          <span>
+            <i class="fa-regular fa-calendar"></i>
+            Est. {{ company.founded_year }}
+          </span>
+          {% endif %}
+        </div>
+      
+        <!-- <p class="company-description">
+          Leading manufacturer of industrial machinery and equipment with over 20 years
+          of experience in precision engineering.
+        </p> -->
+      
+        <!-- <div class="company-tags">
+          <span class="tag">
+            <i class="fa-solid fa-award"></i> ISO 9001
+          </span>
+          <span class="tag">
+            <i class="fa-solid fa-award"></i> ISO 14001
+          </span>
+        </div> -->
+      
+      </section>
+      
+
+      <!-- OPEN POSITIONS -->
+      <section class="card open-positions-card">
+
+        <div class="open-positions-header">
+          <div class="header-left">
+            <i class="fa-solid fa-briefcase"></i>
+            <h3>Open Positions ({{ jobs|length }})</h3>
+          </div>
+        </div>
+      
+        <!-- Job Item -->
+        {% for job in jobs %}
+        <a href="{{ url_for('job_details', job_id=job.job_id) }}"
+           class="open-job-item">
+      
+          <div class="job-info">
+            <h4>{{ job.job_title }}</h4>
+      
+            <div class="job-sub">
+              <span>
+                {{ job.job_start_time.strftime("%I:%M %p") }} –
+                {{ job.job_end_time.strftime("%I:%M %p") }}
+              </span>
+              <span>{{ job.job_opening_no }} positions</span>
+              {% if job.shift|lower == "night" %}
+                <span class="urgent">Urgent</span>
+              {% endif %}
+            </div>
+          </div>
+      
+          <div class="job-salary">
+            {{ job.salary }}
+          </div>
+        </a>
+        {% else %}
+        <p>No open jobs.</p>
+        {% endfor %}
+      
+      </section>
+      
+     
+<section class="card products-card">
+
+  <div class="products-header">
+    <div class="products-title">
+      <i class="fa-solid fa-cube"></i>
+      <h3>Products & Services</h3>
+    </div>
+  </div>
+
+  <div class="products-grid">
+    {% for p in products %}
+    <div class="product-item">
+      <h4 class="product-name">{{ p.sell_name }}</h4>
+      <p class="product-category">{{ p.sell_category }}</p>
+
+      <div class="product-footer">
+        <span class="product-price">₹{{ p.sell_price }}</span>
+        <span class="product-moq">MOQ: {{ p.sell_quantity }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p>No products listed.</p>
+    {% endfor %}
+  </div>
+
+</section>
+
+</div>
+
+<!-- ===== RIGHT COLUMN ===== -->
+<aside class="company-right">
+  <div class="card contact-card">
+    <h3>Contact Information</h3>
+
+    {% if company.company_city %}
+    <p><i class="fa-solid fa-location-dot"></i>
+      {{ company.company_city | title }}
+    </p>
+    {% endif %}
+
+    {% if company.phone %}
+    <p><i class="fa-solid fa-phone"></i> {{ company.phone }}</p>
+    {% endif %}
+
+    {% if company.email %}
+    <p><i class="fa-solid fa-envelope"></i> {{ company.email }}</p>
+    {% endif %}
+
+    {% if company.website %}
+    <p>
+      <i class="fa-solid fa-globe"></i>
+      <a href="{{ company.website }}" target="_blank">
+        {{ company.website }}
+      </a>
+    </p>
+    {% endif %}
+
+    {% if company.phone %}
+    <a href="tel:{{ company.phone }}" class="primary-btn">
+      <i class="fa-solid fa-phone"></i> Contact Company
+    </a>
+    {% endif %}
+  </div>
+</aside>
+
+</div>
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses.</p>
+  </div>
+
+  <div>
+    <h4>Quick Links</h4>
+    <a href="#">Industrial Map</a>
+    <a href="#">Job Portal</a>
+    <a href="#">B2B Trade</a>
+  </div>
+
+  <div>
+    <h4>For Users</h4>
+    <a href="#">Register as Worker</a>
+    <a href="#">Register as Company</a>
+  </div>
+
+  <div>
+    <h4>Contact</h4>
+    <p>contact@industech.in</p>
+    <p>+91 98765 43210</p>
+  </div>
+</footer>
+
+</body>
+</html>
