@@ -48,6 +48,8 @@
   <div class="content-grid">
 
     <!-- ===== LEFT CARD ===== -->
+    <div class="left-column">
+
     <section class="card job-card">
 
         <div class="job-header-row">
@@ -107,42 +109,7 @@
         </li>
       </ul>       -->
     </section>
-
-    <!-- ===== RIGHT CARD ===== -->
-    <div class="apply-card">
-
-        <h3>Ready to Apply?</h3>
-      
-        <div class="apply-info">
-          <div class="info-row">
-            <i class="fa-solid fa-location-dot"></i>
-            <span>{{ job.city | title }}</span>
-          </div>
-      
-          <div class="info-row">
-            <i class="fa-regular fa-clock"></i>
-            <span>
-              {{ job.job_start_time.strftime("%I:%M %p") }} –
-              {{ job.job_end_time.strftime("%I:%M %p") }}</span>
-          </div>
-        </div>
-      
-        <a href="{{ url_for('applyjob', job_id=job.job_id) }}" class="apply-btn">
-          <i class="fa-regular fa-circle-check"></i> Apply Now
-        </a>
-      
-        <a href="tel:{{ job.job_contact }}" class="contact-btn">
-          <i class="fa-solid fa-phone"></i> Contact Company
-        </a>
-      
-        <p class="posted-date">
-          Posted on {{ job.created_at.strftime("%d %b %Y") }}
-        </p>
-      
-      </div>
-      
-
-  <!-- ===== COMPANY INFO ===== -->
+    <!-- ===== COMPANY INFO ===== -->
   <section class="card company-card">
     <h3>About the Company</h3>
   
@@ -164,6 +131,115 @@
         </div>
       </a>      
   </section>
+    </div>
+
+    <!-- ===== RIGHT CARD ===== -->
+    <div class="apply-card">
+
+      <!-- ================= SUMMARY VIEW ================= -->
+      <div id="applySummary">
+    
+        <h3>Ready to Apply?</h3>
+    
+        <div class="apply-info">
+          <div class="info-row">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>{{ job.city | title }}</span>
+          </div>
+    
+          <div class="info-row">
+            <i class="fa-regular fa-clock"></i>
+            <span>
+              {{ job.job_start_time.strftime("%I:%M %p") }} –
+              {{ job.job_end_time.strftime("%I:%M %p") }}
+            </span>
+          </div>
+        </div>
+    
+        <button class="apply-btn" onclick="showApplyForm()">
+          <i class="fa-regular fa-circle-check"></i> Apply Now
+        </button>
+    
+        <a href="tel:{{ job.job_contact }}" class="contact-btn">
+          <i class="fa-solid fa-phone"></i> Contact Company
+        </a>
+    
+        <p class="posted-date">
+          Posted on {{ job.created_at.strftime("%d %b %Y") }}
+        </p>
+    
+      </div>
+    
+      <!-- ================= APPLY FORM VIEW ================= -->
+      <div id="applyFormContainer" style="display:none;">
+    
+        <h3>Apply for this Job</h3>
+    
+        <form method="POST" action="{{ url_for('applyjob') }}">
+    
+          <input type="hidden" name="job_id" value="{{ job.job_id }}">
+    
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="applicant_name"
+                   value="{{ worker.name if worker else '' }}" required>
+          </div>
+    
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="applicant_email"
+                   value="{{ worker.email if worker else '' }}">
+          </div>
+    
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" name="applicant_phone"
+                   value="{{ worker.phone_no if worker else '' }}" required>
+          </div>
+    
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" name="applicant_age" value="{{ worker_age or ''}}">
+          </div>
+    
+          <div class="form-group">
+            <label>Gender</label>
+            <select name="applicant_gender" required>
+              <option value="">Select</option>
+              <option value="Male" {{ 'selected' if worker and worker.gender == 'Male' else '' }}>Male</option>
+              <option value="Female" {{ 'selected' if worker and worker.gender == 'Female' else '' }}>Female</option>
+              <option value="Other" {{ 'selected' if worker and worker.gender == 'Other' else '' }}>Other</option>
+            </select>
+          </div>
+    
+          <div class="form-group">
+            <label>Skill</label>
+            <input type="text" name="applicant_skill"
+                   placeholder="e.g. Machine Operator" required>
+          </div>
+    
+          <div class="form-group">
+            <label>Current Location</label>
+            <input type="text" name="applicant_location"
+                   value="{{ worker.address if worker else '' }}" required>
+          </div>
+    
+          <button type="submit" class="apply-btn full">
+            Submit Application
+          </button>
+    
+          <button type="button" class="contact-btn outline"
+                  onclick="cancelApplyForm()">
+            Cancel
+          </button>
+    
+        </form>
+      </div>
+    
+    </div>
+    
+
+  
   
 
 </main>
@@ -196,6 +272,19 @@
   </div>
 </footer>
 
+<script>
+  function showApplyForm() {
+    document.getElementById("applySummary").style.display = "none";
+    document.getElementById("applyFormContainer").style.display = "block";
+  }
+  
+  function cancelApplyForm() {
+    document.getElementById("applyFormContainer").style.display = "none";
+    document.getElementById("applySummary").style.display = "block";
+  }
+  </script>
+  
+  
 <script>
     document.getElementById("shareJobBtn").addEventListener("click", async () => {
       const shareData = {

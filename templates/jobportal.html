@@ -95,7 +95,7 @@
 
   <div class="jobs-grid">
     {% for job in jobs %}
-    <a href="{{ url_for('job_details', job_id=job.job_id) }}" class="job-card-link">
+    <a href="{{ url_for('jobvisit', job_id=job.job_id) }}" class="job-card-link">
     <div class="job-card urgent">
       <h4>{{ job.job_title | capitalize }}</h4>
       <p class="company">{{ job.company.company_name }}</p>

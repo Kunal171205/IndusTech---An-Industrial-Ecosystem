@@ -1,7 +1,7 @@
 from enum import unique
 from flask import Flask, render_template, request, redirect, session, url_for , jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime , date
 from sqlalchemy import Time
 import os
 import re
@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config.from_object(config)
 db.init_app(app)
 
-from models import Worker , WorkExperience, Certification, Education ,Company, JobPost, sellitem  # import AFTER db.init_app
+from models import Worker , WorkExperience, Certification, Education ,Company, JobPost, sellitem, Application  # import AFTER db.init_app
 
 
 @app.route("/")
@@ -29,29 +29,46 @@ def industrymap():
     search_query = request.args.get("search", "")
     return render_template("industrymap.html", search_query=search_query)
 
-@app.route('/jobportal')
+@app.route("/jobportal")
 def jobportal():
-
     page = request.args.get("page", 1, type=int)
     per_page = 12
 
-    pagination = JobPost.query \
-        .filter_by(status="Active") \
-        .order_by(JobPost.created_at.desc()) \
+    pagination = (
+        JobPost.query
+        .filter_by(status="Active")
+        .order_by(JobPost.created_at.desc())
         .paginate(page=page, per_page=per_page, error_out=False)
-
-    jobs = pagination.items
+    )
 
     return render_template(
-        'jobportal.html',
-        jobs=jobs,
+        "jobportal.html",
+        jobs=pagination.items,
         pagination=pagination
     )
 
 @app.route("/job/<int:job_id>")
-def job_details(job_id):
+def jobvisit(job_id):
     job = JobPost.query.get_or_404(job_id)
-    return render_template("jobvisit.html", job=job)
+
+    worker = None
+    if session.get("user_type") == "worker":
+        worker = Worker.query.get(session.get("worker_id"))
+     
+    worker_age = None
+    if worker and worker.dob:
+        today = date.today()
+        worker_age = today.year - worker.dob.year - (
+            (today.month, today.day) < (worker.dob.month, worker.dob.day)
+        )
+
+    return render_template(
+        "jobvisit.html",
+        job=job,
+        worker=worker,
+        worker_age=worker_age
+    )
+
 
 
 @app.route("/company/<int:company_id>")
@@ -541,78 +558,48 @@ def create_or_edit_job():
     db.session.commit()
     return redirect(url_for("companyprofile"))
 
-
-
-@app.route("/apply", methods=["GET", "POST"])
+@app.route("/apply", methods=["POST"])
 def applyjob():
-
     if session.get("user_type") != "worker":
-        return redirect(url_for("dashboard"))
-
-    worker_id = session.get("worker_id")
-    if not worker_id:
         return redirect(url_for("login"))
 
-    worker = Worker.query.get(worker_id)
+    worker_id = session.get("worker_id")
+    worker = Worker.query.get_or_404(worker_id)
 
-    job_id = request.args.get("job_id") if request.method == "GET" else request.form.get("job_id")
+    job_id = request.form.get("job_id")
     if not job_id:
-        return redirect(url_for("jobportal"))
+        abort(400, "Job ID missing")
 
-    job_id = int(job_id)
+    # Prevent duplicate application
+    existing = Application.query.filter_by(
+        job_id=job_id,
+        worker_id=worker_id
+    ).first()
 
-    job = JobPost.query.get(job_id)
-    if not job:
-        return "Job not found", 404
+    if existing:
+        flash("You have already applied for this job", "warning")
+        return redirect(url_for("jobvisit", job_id=job_id))
 
-    # ---------- POST ----------
-    if request.method == "POST":
+    application = Application(
+        job_id=job_id,
+        applicant_name=request.form.get("applicant_name"),
+        applicant_email=request.form.get("applicant_email"),
+        applicant_phone=request.form.get("applicant_phone"),
+        applicant_age=request.form.get("applicant_age"),
+        applicant_gender=request.form.get("applicant_gender"),
+        applicant_skill=request.form.get("applicant_skill"),
+        applicant_location=request.form.get("applicant_location"),
+        worker_id=worker_id,
+        aadhar_card=worker.aadhar_card,
+        pan_card=worker.pan_card,
+        resume=worker.resume
+    )
 
-        applicant_name = request.form.get("applicant_name") or worker.username
-        applicant_email = request.form.get("applicant_email") or worker.email
-        applicant_phone = request.form.get("applicant_phone") or worker.phone_no
+    db.session.add(application)
+    db.session.commit()
 
-        applicant_age = request.form.get("applicant_age")
-        applicant_gender = request.form.get("applicant_gender") or worker.gender
-        applicant_skill = request.form.get("applicant_skill")
-        applicant_location = request.form.get("applicant_location")
-
-        if not all([
-            applicant_age, applicant_gender, applicant_skill, applicant_location
-        ]):
-            return "All fields are required", 400
-
-        # ✅ FIX: int job_id
-        existing_application = Application.query.filter_by(
-            job_id=job_id,
-            worker_id=worker_id
-        ).first()
-
-        if existing_application:
-            return "You have already applied for this job", 400
-
-        application = Application(
-            job_id=job_id,
-            worker_id=worker_id,
-            applicant_name=applicant_name,
-            applicant_email=applicant_email,
-            applicant_phone=applicant_phone,
-            applicant_age=int(applicant_age),
-            applicant_gender=applicant_gender,
-            applicant_skill=applicant_skill,
-            applicant_location=applicant_location,
-            aadhar_card=worker.aadhar_card,
-            pan_card=worker.pan_card,
-            resume=worker.resume
-        )
-
-        db.session.add(application)
-        db.session.commit()
-
-        return redirect(url_for("workerprofile"))
-
-    # ---------- GET ----------
-    return render_template("apply-job.html", job=job, worker=worker)
+    flash("Application submitted successfully!", "success")
+    return redirect(url_for("jobvisit", job_id=job_id))
 
 
 # ========================= TRADE =============================
