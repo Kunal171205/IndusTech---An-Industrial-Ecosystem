@@ -19,6 +19,66 @@
 
   }
   
+ /* ================= NAVBAR ================= */
+ .navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 40px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.logo i {
+  background: #0d3b8e;
+  color: white;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #64748b;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.nav-links .active {
+  background: #0d3b8e;
+  color: white;
+}
+
+.profile{
+  text-decoration: none;
+  color: #ffffff;
+  background: var(--primary-blue);
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.signup {
+  background: #ff8a00;
+  padding: 10px 18px;
+  border-radius: 12px;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
   
   .back-to-jobs {
     display: inline-flex;
@@ -57,11 +117,21 @@
     color: #374151;
   }
   
-  .signup {
-    background: #f97316;
-    color: white;
-    padding: 8px 14px;
+  .profile{
+    text-decoration: none;
+    color: #ffffff;
+    background: var(--primary-blue);
+    padding: 7px 10px;
     border-radius: 8px;
+    font-weight: 600;
+  }
+  .signup {
+    background: #ff8a00;
+    padding: 10px 18px;
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
   }
   
   /* LAYOUT */

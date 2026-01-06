@@ -13,20 +13,32 @@
 </head>
 <body>
 
-<!-- ===== NAVBAR ===== -->
+
+<!-- ================= NAVBAR ================= -->
 <header class="navbar">
-  <div class="logo">Indus<span>Tech</span></div>
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
 
   <nav class="nav-links">
-    <a href="#">Home</a>
-    <a href="#">Industrial Map</a>
-    <a href="#">Job Portal</a>
-    <a href="#">B2B Trade</a>
+    <a href="{{ url_for('home') }}"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}" class="active"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
   </nav>
 
   <div class="auth">
-    <a href="#" class="login">Login</a>
-    <a href="#" class="signup">Sign Up</a>
+    <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+    {% if session.get('user_type') == 'worker' %}
+      <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+    {% endif %}
   </div>
 </header>
 
@@ -112,7 +124,7 @@
       
         <!-- Job Item -->
         {% for job in jobs %}
-        <a href="{{ url_for('job_details', job_id=job.job_id) }}"
+        <a href="{{ url_for('jobvisit', job_id=job.job_id) }}"
            class="open-job-item">
       
           <div class="job-info">

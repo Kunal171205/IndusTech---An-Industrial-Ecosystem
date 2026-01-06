@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ worker.name }} | IndusTech</title>
+
+  <link rel="stylesheet" href="{{ url_for('static' , filename='css/company.css') }}" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+  />
+</head>
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+    {% if session.get('user_type') == 'worker' %}
+      <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+    {% endif %}
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main class="container">
+
+<a href="{{ url_for('jobportal') }}" class="back-to-jobs">
+  <i class="fa-solid fa-arrow-left"></i>
+  Back
+</a>
+
+<div class="company-grid">
+
+<!-- ===== LEFT COLUMN ===== -->
+<div class="company-left">
+
+<!-- ===== WORKER OVERVIEW ===== -->
+<section class="card company-header-card">
+
+  <div class="company-header-top">
+    <div class="company-header-left">
+
+      <div class="company-avatar">
+        {% if worker.profile_photo %}
+          <img src="{{ url_for('static', filename='uploads/' + worker.profile_photo) }}">
+        {% else %}
+          <i class="fa-solid fa-user"></i>
+        {% endif %}
+      </div>
+
+      <div class="company-header-info">
+        <h1>
+          {{ worker.name | title }}
+          {% if worker.kyc_status == "verified" %}
+            <i class="fa-solid fa-circle-check verified-icon"></i>
+          {% endif %}
+        </h1>
+
+        {% if worker.gender %}
+        <p class="industry-text">{{ worker.gender | title }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="company-stats-row">
+    {% if worker.languages %}
+    <span>
+      <i class="fa-solid fa-language"></i>
+      {{ worker.languages }}
+    </span>
+    {% endif %}
+
+    {% if worker.dob %}
+    <span>
+      <i class="fa-regular fa-calendar"></i>
+      Born {{ worker.dob.strftime("%Y") }}
+    </span>
+    {% endif %}
+  </div>
+
+</section>
+
+<!-- ===== WORK EXPERIENCE ===== -->
+<section class="card open-positions-card">
+
+  <div class="open-positions-header">
+    <div class="header-left">
+      <i class="fa-solid fa-briefcase"></i>
+      <h3>Work Experience ({{ worker.experiences|length }})</h3>
+    </div>
+  </div>
+
+  {% for exp in worker.experiences %}
+  <div class="open-job-item">
+
+    <div class="job-info">
+      <h4>{{ exp.job_title }}</h4>
+      <div class="job-sub">
+        <span>{{ exp.company_name }}</span>
+        <span>
+          {{ exp.start_date.strftime("%b %Y") }} –
+          {{ exp.end_date.strftime("%b %Y") if exp.end_date else "Present" }}
+        </span>
+      </div>
+    </div>
+
+    <div class="job-salary">
+      {{ exp.location or "" }}
+    </div>
+
+  </div>
+  {% else %}
+  <p>No experience added.</p>
+  {% endfor %}
+
+</section>
+
+<!-- ===== EDUCATION ===== -->
+<section class="card products-card">
+
+  <div class="products-header">
+    <div class="products-title">
+      <i class="fa-solid fa-graduation-cap"></i>
+      <h3>Education</h3>
+    </div>
+  </div>
+
+  <div class="products-grid">
+    {% for edu in worker.educations %}
+    <div class="product-item">
+      <h4 class="product-name">{{ edu.degree }}</h4>
+      <p class="product-category">{{ edu.institution }}</p>
+
+      <div class="product-footer">
+        <span>{{ edu.board_university }}</span>
+        <span>{{ edu.year_of_passing }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p>No education details.</p>
+    {% endfor %}
+  </div>
+
+</section>
+
+<!-- ===== CERTIFICATIONS ===== -->
+<section class="card products-card">
+
+  <div class="products-header">
+    <div class="products-title">
+      <i class="fa-solid fa-certificate"></i>
+      <h3>Certifications</h3>
+    </div>
+  </div>
+
+  <div class="products-grid">
+    {% for cert in worker.certifications %}
+    <div class="product-item">
+      <h4 class="product-name">{{ cert.title }}</h4>
+      <p class="product-category">{{ cert.issuer }}</p>
+
+      <div class="product-footer">
+        {% if cert.valid_till %}
+        <span>Valid till {{ cert.valid_till.strftime("%Y") }}</span>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <p>No certifications uploaded.</p>
+    {% endfor %}
+  </div>
+
+</section>
+
+</div>
+
+<!-- ===== RIGHT COLUMN ===== -->
+<aside class="company-right">
+  <div class="card contact-card">
+    <h3>Worker Information</h3>
+
+    {% if worker.address %}
+    <p>
+      <i class="fa-solid fa-location-dot"></i>
+      {{ worker.address }}
+    </p>
+    {% endif %}
+
+    <p>
+      <i class="fa-solid fa-phone"></i>
+      {{ worker.phone_no }}
+    </p>
+
+    {% if worker.email %}
+    <p>
+      <i class="fa-solid fa-envelope"></i>
+      {{ worker.email }}
+    </p>
+    {% endif %}
+
+    {% if worker.resume %}
+    <p>
+      <i class="fa-solid fa-file"></i>
+      <a href="{{ url_for('static', filename='uploads/' + worker.resume) }}" target="_blank">
+        View Resume
+      </a>
+    </p>
+    {% endif %}
+
+    <p>
+      <strong>KYC Status:</strong>
+      {{ worker.kyc_status | title }}
+    </p>
+
+  </div>
+</aside>
+
+</div>
+</main>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div>
+    <h4>IndusTech</h4>
+    <p>Connecting industries, workers, and businesses.</p>
+  </div>
+</footer>
+
+</body>
+</html>

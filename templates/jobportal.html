@@ -28,19 +28,24 @@
     </nav>
   
     <div class="auth">
-      <a href ="{{url_for('login')}}" class="login">Login</a>
-      <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
-    </div>
-  </header>
-  
-  <div class="orange-strip"></div>
-    <!-- HERO -->
-    <section class="hero">
-    <h1>Find Jobs Near You</h1>
-    <p>Simple job search for housekeeping, production, security, and more.</p>
+      {% if session.get('user_type') == 'worker' %}
+        <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      {% elif session.get('user_type') == 'company' %}
+      <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+      {% endif %}
+  </div>
+</header>
 
-    <!-- SEARCH BAR -->
-<div class="search-wrapper">
+<div class="orange-strip"></div>
+<section class="hero">
+<h1>Find Jobs Near You</h1>
+<p>Simple job search for housekeeping, production, security, and more.</p>
+  </div>
+  <div class="search-wrapper">
     <div class="search-input">
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" placeholder="Search jobs or companies..." />
@@ -51,38 +56,78 @@
       Filters
       <i class="fa-solid fa-chevron-down" id="filterIcon"></i>
     </button>
-  </div>
+  </div>    
+
   </section>
 
   <!-- FILTER PANEL -->
-  <div class="filter-panel" id="filterPanel">
-  
-    <div class="filter-left">
+  <div class="filter-grid" id="filterPanel">
+
+    <!-- Job Category -->
+    <div class="filter-box">
       <h4>Job Category</h4>
-      <div class="filter-chips">
-        <span class="chip active" data-category="Housekeeping">🧹 Housekeeping</span>
-        <span class="chip" data-category="Production">🏭 Production</span>
-        <span class="chip" data-category="Construction">🏗️ Construction</span>
-        <span class="chip" data-category="Maintenance">🔧 Maintenance</span>
-        <span class="chip" data-category="Security">🛡️ Security</span>
-
-      </div>
+      <select class="filter-select" id="categoryFilter">
+        <option value="">Any</option>
+        <option value="Housekeeping">🧹 Housekeeping</option>
+        <option value="Production Worker">🏭 Production</option>
+        <option value="Helper">Helper</option>
+        <option value="Security">🛡️ Security</option>
+      </select>
     </div>
   
-    <div class="filter-right">
-      <h4>Distance</h4>
-      <div class="filter-chips">
-        <span class="chip" data-distance="1">1 km</span>
-        <span class="chip" data-distance="5">5 km</span>
-        <span class="chip active" data-distance="10">10 km</span>
-        <span class="chip" data-distance="20">20 km</span>
-      </div>
+    <!-- City -->
+    <div class="filter-box">
+      <h4>City</h4>
+      <input type="text" placeholder="Enter city name" class="filter-input" id="cityFilter">
     </div>
+  
+    <!-- Shift -->
+    <div class="filter-box">
+      <h4>Shift</h4>
+      <select class="filter-select" id="shiftFilter">
+        <option value="">Any</option>
+        <option value="Day">Day Shift</option>
+        <option value="Night">Night Shift</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+  
+    <!-- Salary -->
+    <div class="filter-box">
+      <h4>Minimum Salary</h4>
+      <select class="filter-select" id="salaryFilter">
+        <option value="">Any</option>
+        <option value="300">₹300+</option>
+        <option value="500">₹500+</option>
+        <option value="1000">₹1000+</option>
+      </select>
+    </div>
+  
+    <!-- Openings -->
+    <div class="filter-box">
+      <h4>Minimum Openings</h4>
+      <select class="filter-select" id="openingFilter">
+        <option value="">Any</option>
+        <option value="1">1+</option>
+        <option value="5">5+</option>
+        <option value="10">10+</option>
 
-    <button id="clearFilters" class="clear-btn">Clear Filters</button>
-
+      </select>
+    </div>
+  
+    <!-- Clear -->
+    
+      <button class="apply-btn" id="applyFiltersBtn">
+        Apply Filters
+      </button>
+      <button class="clear-btn">
+        Clear Filters
+      </button>
+    
+    
   
   </div>
+  
 <!-- JOB LIST -->
 <section class="jobs-section">
   <div class="jobs-header">

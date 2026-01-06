@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndusTech | Company Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/job_applications.css') }}">
+</head>
+<body>
+
+    
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+    {% if session.get('user_type') == 'company' %}
+      <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> Company profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+    {% endif %}
+  </div>
+</header>
+
+  <div class="applications-container">
+
+    <div class="page-header">
+      <h2>Applications for <span>{{ job.job_title }}</span></h2>
+      <p>{{ applications|length }} candidates applied</p>
+    </div>
+  
+    {% for app in applications %}
+    <div class="application-card">
+  
+      <div class="app-left">
+        <div class="avatar">
+          {{ app.applicant_name[0]|upper }}
+        </div>
+  
+        <div class="app-info">
+            <div class="app-name-row">
+                <h4>{{ app.applicant_name }}</h4>
+            
+                <a href="{{ url_for('workerprofile_public', worker_id=app.worker_id) }}"
+                   class="btn view-profile"
+                   target="_blank">
+                  View Profile
+                </a>
+              </div>
+          <p class="skill">{{ app.applicant_skill }}</p>
+  
+          <div class="meta">
+            <span><i class="fa-solid fa-location-dot"></i> {{ app.applicant_location }}</span>
+            <span><i class="fa-solid fa-phone"></i> {{ app.applicant_phone }}</span>
+          </div>
+  
+          <small class="date">
+            Applied on {{ app.application_date.strftime("%d %b %Y") }}
+          </small>
+        </div>
+      </div>
+  
+      <div class="app-right">
+        
+        
+  
+        <div class="actions">
+           
+            {% if app.applicant_status == "pending" %}
+
+            <form method="POST"
+                  action="{{ url_for('update_application_status', application_id=app.application_id) }}">
+              <input type="hidden" name="status" value="Accepted">
+              <button class="btn accept">
+                <i class="fa-solid fa-check"></i> Accept
+              </button>
+            </form>
+            
+            <form method="POST"
+                  action="{{ url_for('update_application_status', application_id=app.application_id) }}">
+              <input type="hidden" name="status" value="Rejected">
+              <input type="hidden" name="status" value="Rejected">
+              <button class="btn reject">
+                <i class="fa-solid fa-xmark"></i> Reject
+              </button>
+            </form>
+            {% else %}
+
+        <span class="final-status {{ app.applicant_status|lower }}">
+        {{ app.applicant_status }}
+        </span>
+
+            
+            {% endif %}
+            
+  
+        </div>
+  
+      </div>
+    </div>
+  
+    {% else %}
+    <p class="empty">No applications yet.</p>
+    {% endfor %}
+  
+  </div>
+
+
+
+<footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>IndusTech</h4>
+            <p>Connecting India's industrial workforce with opportunities.</p>
+        </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <a href="home.html">Home</a>
+            <a href="job-portal.html">Find Jobs</a>
+            <a href="industry-map.html">Industry Map</a>
+            <a href="b2btrade.html">B2B Trade</a>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <a href="#">Help Center</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2025 IndusTech. All rights reserved.</p>
+    </div>
+</footer>
+
+
+

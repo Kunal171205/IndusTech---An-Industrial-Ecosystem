@@ -51,7 +51,28 @@
     background: #0d3b8e;
     color: white;
   }
+  :root {
+    --primary-blue: #0a438b;
+    --dark-blue: #101d2d;
+    --orange: #ff8c1a;
+    --light-bg: #f8fafc;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --white: #ffffff;
+    --border-color: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+}
+
   
+  .profile{
+    text-decoration: none;
+    color: #ffffff;
+    background: var(--primary-blue);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
   .signup {
     background: #ff8a00;
     padding: 10px 18px;
@@ -60,6 +81,67 @@
     text-decoration: none;
     font-weight: 600;
   }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  
+    background: #fff;
+    border-radius: 12px;
+  
+    /* 🔒 HIDDEN STATE */
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    overflow: hidden;
+  
+    transition:
+      max-height 0.35s ease,
+      opacity 0.25s ease,
+      padding 0.25s ease;
+  }
+  
+  /* ✅ OPEN STATE */
+  .filter-grid.open {
+    max-height: 500px;   /* safe height */
+    opacity: 1;
+    padding: 20px;
+  }
+  
+  
+  .filter-box h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .filter-input,
+  .filter-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 14px;
+  }
+  
+  .filter-action {
+    display: flex;
+    align-items: flex-end;
+  }
+  
+
+  
+  .clear-btn:hover {
+    background: #0a438b;
+    color: white;
+  }
+  
 
   
   /* ORANGE STRIP */
@@ -168,26 +250,20 @@
     color: white;
   }
   
-/* FILTER PANEL ANIMATION */
-.filter-panel {
-    max-height: 0;
-    overflow: hidden;
-    background: #ffffff;
-  
-    padding: 0 40px;
-    border-top: 1px solid #eef2f7;
-  
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  
-    transition: max-height 0.35s ease, padding 0.35s ease;
+  .apply-btn {
+    margin-top: 20px;
+    background: transparent;
+    border: 2px solid #09306a;
+    padding: 5px 14px;
+    border-radius: 10px;
+    cursor: pointer;
   }
   
-  .filter-panel.open {
-    max-height: 200px;
-    padding: 24px 40px;
+  .apply-btn:hover {
+    background: #0a438b;
+    color: white;
   }
+  
   
   /* Chevron rotation */
   #filterIcon {

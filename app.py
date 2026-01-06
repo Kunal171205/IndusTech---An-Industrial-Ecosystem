@@ -34,11 +34,37 @@ def jobportal():
     page = request.args.get("page", 1, type=int)
     per_page = 12
 
-    pagination = (
-        JobPost.query
-        .filter_by(status="Active")
-        .order_by(JobPost.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
+    category = request.args.get("category")
+    city = request.args.get("city")
+    shift = request.args.get("shift")
+    salary = request.args.get("salary", type=int)
+    openings = request.args.get("openings", type=int)
+
+    query = JobPost.query.filter_by(status="Active")
+
+    if category:
+        query = query.filter(JobPost.job_title.ilike(f"%{category}%"))
+
+    if city:
+        query = query.filter(JobPost.city.ilike(f"%{city}%"))
+
+    if shift:
+        query = query.filter(JobPost.shift == shift)
+
+    if salary:
+        query = query.filter(
+            JobPost.salary.cast(db.Integer) >= salary
+        )
+
+    if openings:
+        query = query.filter(JobPost.job_opening_no >= openings)
+
+    pagination = query.order_by(
+        JobPost.created_at.desc()
+    ).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
     )
 
     return render_template(
@@ -46,6 +72,7 @@ def jobportal():
         jobs=pagination.items,
         pagination=pagination
     )
+
 
 @app.route("/job/<int:job_id>")
 def jobvisit(job_id):
@@ -69,6 +96,115 @@ def jobvisit(job_id):
         worker_age=worker_age
     )
 
+
+
+from sqlalchemy.exc import SQLAlchemyError
+from flask import abort
+
+@app.route("/application/<int:application_id>/status", methods=["POST"])
+def update_application_status(application_id):
+
+    # 🔐 Only company allowed
+    if session.get("user_type") != "company":
+        abort(403)
+
+    new_status = request.form.get("status")  # Accepted / Rejected
+
+    application = Application.query.get_or_404(application_id)
+    job = application.job
+
+    # 🔐 Ownership check
+    if job.company_id != session.get("company_id"):
+        abort(403)
+
+    # 🚫 Already processed → STOP
+    if application.applicant_status != "pending":
+        flash("This application has already been processed.", "warning")
+        return redirect(request.referrer)
+
+    try:
+        if new_status == "Accepted":
+
+            # 🚫 No openings left
+            if job.job_opening_no <= 0:
+                flash("No openings left for this job.", "danger")
+                return redirect(request.referrer)
+
+            # ✅ Accept
+            application.applicant_status = "Accepted"
+            job.job_opening_no -= 1
+
+            # 🔒 Auto close job
+            if job.job_opening_no == 0:
+                job.status = "Closed"
+
+        elif new_status == "Rejected":
+            application.applicant_status = "Rejected"
+
+        else:
+            flash("Invalid action", "danger")
+            return redirect(request.referrer)
+
+        db.session.commit()
+        flash("Application updated successfully.", "success")
+
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("Database error. Try again.", "danger")
+
+    return redirect(request.referrer)
+
+@app.route("/company/application/<int:application_id>/delete", methods=["POST"])
+def delete_application(application_id):
+    if session.get("user_type") != "company":
+        return redirect(url_for("login"))
+
+    application = Application.query.get_or_404(application_id)
+
+    # security check
+    if application.job.company_id != session.get("company_id"):
+        abort(403)
+
+    db.session.delete(application)
+    db.session.commit()
+
+    flash("Application removed successfully", "success")
+    return redirect(request.referrer)
+
+@app.route("/company/job/<int:job_id>/applications")
+def view_job_applications(job_id):
+    if session.get("user_type") != "company":
+        return redirect(url_for("login"))
+
+    company_id = session.get("company_id")
+
+    job = JobPost.query.filter_by(
+        job_id=job_id,
+        company_id=company_id
+    ).first_or_404()
+
+    applications = Application.query.filter_by(job_id=job_id)\
+                                    .order_by(Application.application_date.desc())\
+                                    .all()
+
+    return render_template(
+        "job_applications.html",
+        job=job,
+        applications=applications
+    )
+
+@app.route("/worker/<int:worker_id>")
+def workerprofile_public(worker_id):
+    # Only company can view worker public profile
+    if session.get("user_type") != "company":
+        return redirect(url_for("login"))
+
+    worker = Worker.query.get_or_404(worker_id)
+
+    return render_template(
+        "workerpublic.html",   # the template I gave you earlier
+        worker=worker
+    )
 
 
 @app.route("/company/<int:company_id>")

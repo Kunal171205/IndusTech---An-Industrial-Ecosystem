@@ -10,19 +10,34 @@
 </head>
 <body>
 
-    <header>
-        <div class="logo"><i class="fa-solid fa-industry"></i> IndusTech</div>
-        <nav>
-            <a href="home.html"><i class="fa-solid fa-house"></i> Home</a>
-            <a href="industry-map.html"><i class="fa-solid fa-location-dot"></i> Industrial Map</a>
-            <a href="job-portal.html"><i class="fa-solid fa-briefcase"></i> Job Portal</a>
-            <a href="b2btrade.html"><i class="fa-solid fa-box"></i> B2B Trade</a>
-        </nav>
-        <div class="auth-btns">
-            <a href="company-profile.html" class="login">My Profile</a>
-            <a href="login.html" class="signup">Logout</a>
-        </div>
-    </header>
+    
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-industry"></i>
+      <div>
+        <strong>IndusTech</strong><br>
+        <small>Industrial Ecosystem</small>
+      </div>
+    </div>
+  
+    <nav class="nav-links">
+      <a href="{{ url_for('home') }}"> <i class="fa-solid fa-house"></i> Home</a>
+      <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+      <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+      <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+    </nav>
+  
+    <div class="auth">
+      <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
+      {% if session.get('user_type') == 'company' %}
+        <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> Company profile</a>
+        <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="signup">Login</a>
+      {% endif %}
+    </div>
+  </header>
 
     <div class="profile-container">
         <!-- Profile Header -->
@@ -177,8 +192,12 @@
                             <span><i class="fas fa-rupee-sign"></i> {{ job.salary }}</span>
                           </div>
                       
+                          <div class="job-action-buttons">
+                            <a href="{{ url_for('view_job_applications', job_id=job.job_id) }}"
+                                class="btn-view-applications">
+                                View Applications ({{ job.applications|length }})
+                            </a>
                       
-                          <div class="job-actions">
                             <button class="btn-edit-job"
                               onclick="editJob(
                                 '{{ job.id }}',
@@ -197,14 +216,14 @@
                               Edit
                             </button>
                           </div>
-                        
                         </div>
+         
                         {% else %}
                           <p>No jobs posted yet.</p>
                         {% endfor %}
                     </div>
                     </div>
-                </div>
+                </div> 
 
                 <!-- Worker Applications -->
                 <!-- <div class="profile-card">

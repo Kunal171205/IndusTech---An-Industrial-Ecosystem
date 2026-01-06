@@ -900,6 +900,14 @@ transform: translateY(-10px);
     color: white;
   }
   
+  .profile{
+    text-decoration: none;
+    color: #ffffff;
+    background: var(--primary-blue);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
   .signup {
     background: #ff8a00;
     padding: 10px 18px;

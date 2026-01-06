@@ -70,10 +70,10 @@ body {
   
   .profile{
     text-decoration: none;
-    color: white;
+    color: #ffffff;
     background: var(--primary-blue);
-    padding: 9px 16px;
-    border-radius: 12px;
+    padding: 7px 10px;
+    border-radius: 8px;
     font-weight: 600;
   }
   .signup {
@@ -84,7 +84,6 @@ body {
     text-decoration: none;
     font-weight: 600;
   }
-  
 /* --- Profile Container --- */
 .profile-container {
     max-width: 1200px;

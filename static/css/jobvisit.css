@@ -185,15 +185,35 @@
       background: #0d3b8e;
       color: white;
     }
-    
-    .signup {
-      background: #ff8a00;
-      padding: 10px 18px;
-      border-radius: 12px;
-      color: white;
-      text-decoration: none;
-      font-weight: 600;
-    }
+    :root {
+      --primary-blue: #0a438b;
+      --dark-blue: #101d2d;
+      --orange: #ff8c1a;
+      --light-bg: #f8fafc;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --white: #ffffff;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+  }
+  
+  .profile{
+    text-decoration: none;
+    color: #ffffff;
+    background: var(--primary-blue);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .signup {
+    background: #ff8a00;
+    padding: 10px 18px;
+    border-radius: 12px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+  }
   
     
     /* ORANGE STRIP */

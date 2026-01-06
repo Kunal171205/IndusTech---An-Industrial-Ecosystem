@@ -33,8 +33,15 @@
     </nav>
   
     <div class="auth">
-      <a href ="{{url_for('login')}}" class="login">Login</a>
-      <a href ="{{url_for('signup')}}" class="signup">Sign Up</a>
+      {% if session.get('user_type') == 'worker' %}
+        <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      {% elif session.get('user_type') == 'company' %}
+      <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="signup">Login</a>
+      {% endif %}
     </div>
   </header>
 
