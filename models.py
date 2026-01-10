@@ -179,6 +179,9 @@ class Application(db.Model):
 
 class sellitem(db.Model):
     __tablename__ = 'sell_item'
+    
+    company_id = db.Column(db.Integer, db.ForeignKey("company.id"))
+
     sell_id = db.Column(db.Integer, primary_key=True)
     sell_name = db.Column(db.String(80), nullable=False) #
     sell_price = db.Column(db.Float, nullable=False)
@@ -188,7 +191,7 @@ class sellitem(db.Model):
     sell_category = db.Column(db.String(80), nullable=True)  # Category field     #
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
+    company = db.relationship("Company", backref="sell_items")
     def __repr__(self):
         return f"<sellitem {self.sell_name} - ₹{self.sell_price}>"
 

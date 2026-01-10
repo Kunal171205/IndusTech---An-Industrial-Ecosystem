@@ -178,7 +178,7 @@
     <section class="products-section">
 
       <div class="products-header">
-        <h2>6 Products</h2>
+        <h2>{{ pagination.total }} Sell Item Found</h2>
 
         <div class="products-controls">
 
@@ -206,7 +206,7 @@
 
       <div class="products-scroll"> 
       <div class="products-grid">
-
+        {% for item in sell_items %}
         <!-- PRODUCT CARD -->
         <div class="product-card">
             <!-- IMAGE / PLACEHOLDER AREA -->
@@ -220,141 +220,45 @@
 
             <!-- CONTENT -->
             <div class="product-body">
-                <span class="product-category">Raw Materials</span>
+                <span class="product-category">{{ item.sell_category }}</span>
 
-                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
-                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
+                <h4 class="product-title">{{ item.sell_name }}</h4>
+                <p class="product-company">by {{ item.company.company_name}}</p>
 
                 <div class="product-price-row">
-                <span class="price">₹400<span>/meter</span></span>
-                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
+                <span class="price">₹{{ item.sell_price}}</span>
+                <span class="moq">MOQ: {{ item.sell_quantity }} <i class="fa-solid fa-circle-check"></i></span>
                 </div>
 
                 <div class="product-stock">
                 <span class="dot"></span> In Stock
                 </div>
-            </div>
-
+            </div>  
+        </div>
+        {% else %}
+          <p>No jobs found.</p>
+        {% endfor %}
         </div>
 
-        <div class="product-card">
-            <!-- IMAGE / PLACEHOLDER AREA -->
-            <div class="product-image">
-                <!-- CASE 1: If image exists -->
-                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
+        <div class="pagination">
 
-                <!-- CASE 2: If image NOT available -->
-                <i class="fa-solid fa-box"></i>
-            </div>
-
-            <!-- CONTENT -->
-            <div class="product-body">
-                <span class="product-category">Raw Materials</span>
-
-                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
-                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
-
-                <div class="product-price-row">
-                <span class="price">₹350<span>/meter</span></span>
-                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
-                </div>
-
-                <div class="product-stock">
-                <span class="dot"></span> In Stock
-                </div>
-            </div>
-
-        </div>
-
-        <div class="product-card">
-            <!-- IMAGE / PLACEHOLDER AREA -->
-            <div class="product-image">
-                <!-- CASE 1: If image exists -->
-                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
-
-                <!-- CASE 2: If image NOT available -->
-                <i class="fa-solid fa-box"></i>
-            </div>
-
-            <!-- CONTENT -->
-            <div class="product-body">
-                <span class="product-category">Raw Materials</span>
-
-                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
-                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
-
-                <div class="product-price-row">
-                <span class="price">₹500<span>/meter</span></span>
-                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
-                </div>
-
-                <div class="product-stock">
-                <span class="dot"></span> In Stock
-                </div>
-            </div>
-
-        </div>
-
-        <div class="product-card">
-            <!-- IMAGE / PLACEHOLDER AREA -->
-            <div class="product-image">
-                <!-- CASE 1: If image exists -->
-                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
-
-                <!-- CASE 2: If image NOT available -->
-                <i class="fa-solid fa-box"></i>
-            </div>
-
-            <!-- CONTENT -->
-            <div class="product-body">
-                <span class="product-category">Raw Materials</span>
-
-                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
-                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
-
-                <div class="product-price-row">
-                <span class="price">₹450<span>/meter</span></span>
-                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
-                </div>
-
-                <div class="product-stock">
-                <span class="dot"></span> In Stock
-                </div>
-            </div>
-
-        </div>
-
-        <div class="product-card">
-            <!-- IMAGE / PLACEHOLDER AREA -->
-            <div class="product-image">
-                <!-- CASE 1: If image exists -->
-                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
-
-                <!-- CASE 2: If image NOT available -->
-                <i class="fa-solid fa-box"></i>
-            </div>
-
-            <!-- CONTENT -->
-            <div class="product-body">
-                <span class="product-category">Raw Materials</span>
-
-                <h4 class="product-title">Industrial Steel Pipes - 2 inch</h4>
-                <p class="product-company">by ABC Manufacturing Pvt Ltd</p>
-
-                <div class="product-price-row">
-                <span class="price">₹450<span>/meter</span></span>
-                <span class="moq">MOQ: 100 <i class="fa-solid fa-circle-check"></i></span>
-                </div>
-
-                <div class="product-stock">
-                <span class="dot"></span> In Stock
-                </div>
-            </div>
-
-        </div>
-
+          {% if pagination.has_prev %}
+            <a href="{{ url_for('trade', page=pagination.prev_num) }}" class="page-btn">
+                ← Previous
+            </a>
+          {% endif %}
+        
+          <span class="page-info">
+              Page {{ pagination.page }} of {{ pagination.pages }}
+          </span>
+        
+          {% if pagination.has_next %}
+            <a href="{{ url_for('trade', page=pagination.next_num) }}" class="page-btn">
+                Next →
+            </a>
+          {% endif %}
       </div>
-    
+      </div>
     </section>
 
   </div>

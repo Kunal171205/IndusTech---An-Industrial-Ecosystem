@@ -29,6 +29,9 @@ def industrymap():
     search_query = request.args.get("search", "")
     return render_template("industrymap.html", search_query=search_query)
 
+@app.route('/product_view')
+def productview():
+    return render_template('product_view.html')
 @app.route("/jobportal")
 def jobportal():
     page = request.args.get("page", 1, type=int)
@@ -155,7 +158,7 @@ def update_application_status(application_id):
     return redirect(request.referrer)
 
 @app.route("/company/application/<int:application_id>/delete", methods=["POST"])
-def delete_application(application_id):
+def delete_company_application(application_id):
     if session.get("user_type") != "company":
         return redirect(url_for("login"))
 
@@ -221,10 +224,39 @@ def companyprofile_public(company_id):
         jobs=jobs
     )
 
-
 @app.route('/trade')
 def trade():
-    return render_template('trade.html')
+    page = request.args.get("page", 1, type=int)
+    per_page = 9
+
+    pagination = sellitem.query.order_by(
+        sellitem.created_at.desc()
+    ).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    return render_template(
+        "trade.html",
+        sell_items=pagination.items,
+        pagination=pagination
+    )
+
+@app.route('/company/job/delete/<int:job_id>', methods=['POST'])
+def delete_job(job_id):
+    job = JobPost.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    return redirect(url_for('companyprofile'))
+
+
+@app.route('/company/trade/delete/<int:sell_id>', methods=['POST'])
+def delete_trade(sell_id):
+    item = sellitem.query.get_or_404(sell_id)
+    db.session.delete(item)
+    db.session.commit()
+    return redirect(url_for('companyprofile'))
 
 
 @app.route('/login')
@@ -294,14 +326,58 @@ def workerprofile():
     if session.get("user_type") != "worker":
         return redirect(url_for("login"))
 
+    worker_id = session.get('worker_id')
     worker = Worker.query.get(session["worker_id"])
     initial = worker.name[0].upper() if worker.name else "U"
+
+    applications = Application.query \
+        .filter_by(worker_id=worker_id) \
+        .order_by(Application.application_date.desc()) \
+        .all()
 
     return render_template(
         "workerprofile.html",
         worker=worker,
-        initial=initial
+        initial=initial,
+        applications=applications
     )
+
+@app.route('/worker/application/delete/<int:app_id>', methods=['POST'])
+def delete_worker_application(app_id):
+    if session.get("user_type") != "worker":
+        abort(403)
+
+    app = Application.query.get_or_404(app_id)
+
+    if app.worker_id != session.get('worker_id'):
+        abort(403)
+
+    # only pending applications can be deleted
+    if app.applicant_status != "pending":
+        flash("You cannot delete a processed application", "warning")
+        return redirect(url_for("workerprofile"))
+
+    db.session.delete(app)
+    db.session.commit()
+    flash("Application deleted", "success")
+    return redirect(url_for('workerprofile'))
+
+
+
+@app.route('/application/edit', methods=['POST'])
+def edit_application():
+    app = Application.query.get_or_404(request.form['application_id'])
+
+    if app.worker_id != session.get('worker_id'):
+        abort(403)
+
+    app.applicant_skill = request.form['applicant_skill']
+    app.applicant_location = request.form['applicant_location']
+
+    db.session.commit()
+    return redirect(url_for('workerprofile'))
+
+
 
 
 from sqlalchemy.exc import IntegrityError
@@ -563,12 +639,17 @@ def companyprofile():
         return redirect(url_for("login"))
 
     company = Company.query.get(session["company_id"])
+    sell_items = sellitem.query.filter_by(
+    company_id=company.id
+).order_by(sellitem.created_at.desc()).all()
+
     initial = company.company_name[0].upper() if company.company_name else "U"
 
     return render_template(
         "companyprofile.html",
         company=company,
-        initial=initial
+        initial=initial,
+        sell_items=sell_items
     )
 
 @app.route("/company/upload-profile-photo", methods=["POST"])
@@ -791,19 +872,37 @@ def add_selling_item():
                 file.save(os.path.join(UPLOAD_FOLDER, filename))
                 image_filenames.append(filename)
 
+        sell_id = request.form.get("sell_id")
+        if sell_id:
+        # ===== EDIT JOB =====
+            
+            sell = sellitem.query.get(sell_id)
 
-        # ---------- CREATE DB ENTRY ----------
-        sell_item = sellitem(
-            sell_name=sell_name,
-            sell_category=sell_category or "General",
-            sell_quantity=sell_quantity,
-            sell_price=sell_price,
-            sell_description=sell_description,
-            sell_image=json.dumps(image_filenames),  # ✅ MULTIPLE IMAGES
-            created_at=datetime.utcnow()
-        )
+            # 🔐 ownership check (VERY IMPORTANT)
+            if sell.company_id != session["company_id"]:
+                abort(403)
+                
+            sell.sell_name = request.form.get("sell_name") or sell_name
+            sell.sell_category = request.form.get("sell_category") or sell_category
+            sell.sell_quantity = request.form.get("sell_quantity") or sell_quantity
+            # sell.sell_location = request.form.get("sell_location") or sell_location
+            sell.sell_price = request.form.get("sell_price") or sell_price
+            sell.sell_description = request.form.get("sell_description") or sell_description
 
-        db.session.add(sell_item)
+        else:
+            # ---------- CREATE DB ENTRY ----------
+            sell_item = sellitem(
+                sell_name=sell_name,  
+                company_id=session["company_id"],
+                sell_category=sell_category or "General",
+                sell_quantity=sell_quantity,
+                sell_price=sell_price,
+                sell_description=sell_description,
+                sell_image=json.dumps(image_filenames),  # ✅ MULTIPLE IMAGES
+                created_at=datetime.utcnow()
+            )
+
+            db.session.add(sell_item)
         db.session.commit()
 
     

@@ -84,6 +84,87 @@ body {
     text-decoration: none;
     font-weight: 600;
   }
+
+  .app-status.pending {
+    background: #fff3cd;
+    color: #664d03;
+  }
+  
+  .app-status.selected {
+    background: #d1e7dd;
+    color: #0f5132;
+  }
+  
+  .app-status.rejected {
+    background: #f8d7da;
+    color: #842029;
+  }
+
+  .application-item {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .app-status {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: #e9ecef;
+  }
+  
+  .app-status.applied { background: #cfe2ff; color: #084298; }
+  .app-status.selected { background: #d1e7dd; color: #0f5132; }
+  .app-status.rejected { background: #f8d7da; color: #842029; }
+  
+  .app-details {
+    margin: 8px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .app-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .btn-view {
+    background: #0d6efd;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+  }
+  
+  .btn-edit {
+    background: #ffc107;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .btn-delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  
 /* --- Profile Container --- */
 .profile-container {
     max-width: 1200px;

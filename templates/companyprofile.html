@@ -87,7 +87,7 @@
                 <div class="profile-actions">
                     <!-- <button class="btn-edit-profile"><i class="fas fa-edit"></i> Edit Profile</button> -->
                     <button class="btn-edit-profile" onclick="openJobModal()"><i class="fas fa-plus"></i> Create Job</button>
-                    <button class="btn-create-job" onclick="openTradeEditModal()"><i class="fas fa-plus"></i> Trade Post</button>
+                    <button class="btn-create-job" onclick="openTradeModal()"><i class="fas fa-plus"></i> Trade Post</button>
                 </div>
             </div>
         </div>
@@ -181,7 +181,7 @@
                       
                           <div class="job-header">
                             <h4>{{ job.job_title }}</h4>
-                            <span class="job-status {{ job.status|lower }}">{{ job.status }}</span>
+                            <span class="trade-date">{{ job.created_at.strftime('%d %B %Y') }}</span>
                           </div>
                       
                           <div class="job-details">
@@ -215,6 +215,13 @@
                               )">
                               Edit
                             </button>
+                            <form method="POST"
+                            action="{{ url_for('delete_job', job_id=job.job_id) }}"
+                            onsubmit="return confirm('Delete this job posting?');">
+                            <button type="submit" class="btn-delete-small">
+                              <i class="fas fa-trash"></i> Delete
+                            </button>
+                            </form>
                           </div>
                         </div>
          
@@ -281,87 +288,61 @@
 
                 <!-- B2B Trade History -->
                 <div class="profile-card">
-                    <h3><i class="fas fa-handshake"></i> B2B Trade History</h3>
+                    <h3><i class="fas fa-briefcase"></i> B2B Trade History</h3>
+                    
                     <div class="trade-history">
-                        <div class="trade-item">
-                            <div class="trade-header">
-                                <div class="trade-partner">
-                                    <i class="fas fa-building"></i>
-                                    <div>
-                                        <h4>XYZ Suppliers Ltd</h4>
-                                        <p>Raw Material Supply</p>
-                                    </div>
-                                </div>
-                                <span class="trade-date">Dec 15, 2025</span>
-                            </div>
-                            <div class="trade-details">
-                                <span class="trade-amount">₹2,50,000</span>
-                                <span class="trade-status completed">Completed</span>
-                            </div>
-                            <div class="trade-description">
-                                Supply of steel sheets and aluminum coils for production line.
-                            </div>
-                        </div>
-
+                    <div class="jobs-list">
+                        {% for item in sell_items %}
                         <div class="trade-item">
                             <div class="trade-header">
                                 <div class="trade-partner">
                                     <i class="fas fa-truck"></i>
                                     <div>
-                                        <h4>Logistics Pro</h4>
-                                        <p>Transportation Services</p>
+                                        <h4>{{ item.sell_name }}</h4>
+                                        <p>{{ item.sell_category }}</p>
                                     </div>
                                 </div>
-                                <span class="trade-date">Dec 10, 2025</span>
+                                <span class="trade-date">{{ item.created_at.strftime('%d %B %Y') }}</span>
                             </div>
                             <div class="trade-details">
-                                <span class="trade-amount">₹75,000</span>
-                                <span class="trade-status completed">Completed</span>
+                                <span class="trade-amount">₹{{ item.sell_price }}</span>
+                                <div class="job-action-buttons">
+                                    
+                              
+                                    <button class="btn-edit-job"
+                                      onclick="editTrade(
+                                        '{{ item.sell_id }}',
+                                        '{{ item.sell_name }}',
+                                        '{{ item.sell_category }}',
+                                        '{{ item.sell_description }}',
+                                        '{{ item.sell_price }}',
+                                        '{{ item.sell_quantity }}',
+                                        
+                                      )">
+                                      Edit
+                                    </button>
+                                     <!-- DELETE BESIDE EDIT -->
+                                      <form method="POST"
+                                      action="{{ url_for('delete_trade', sell_id=item.sell_id) }}"
+                                      onsubmit="return confirm('Delete this trade item?');">
+                                      <button type="submit" class="btn-delete">
+                                      <i class="fas fa-trash"></i> Delete
+                                      </button>
+                                      </form>
+                                  </div>
                             </div>
                             <div class="trade-description">
-                                Transportation of finished goods to Delhi warehouse.
+                                {{ item.sell_description }}
                             </div>
                         </div>
-
-                        <div class="trade-item">
-                            <div class="trade-header">
-                                <div class="trade-partner">
-                                    <i class="fas fa-tools"></i>
-                                    <div>
-                                        <h4>Tech Solutions Inc</h4>
-                                        <p>Equipment Maintenance</p>
-                                    </div>
-                                </div>
-                                <span class="trade-date">Dec 5, 2025</span>
-                            </div>
-                            <div class="trade-details">
-                                <span class="trade-amount">₹1,20,000</span>
-                                <span class="trade-status in-progress">In Progress</span>
-                            </div>
-                            <div class="trade-description">
-                                Annual maintenance contract for production machinery.
-                            </div>
-                        </div>
-
-                        <div class="trade-item">
-                            <div class="trade-header">
-                                <div class="trade-partner">
-                                    <i class="fas fa-box"></i>
-                                    <div>
-                                        <h4>Global Packaging Co</h4>
-                                        <p>Packaging Materials</p>
-                                    </div>
-                                </div>
-                                <span class="trade-date">Nov 28, 2025</span>
-                            </div>
-                            <div class="trade-details">
-                                <span class="trade-amount">₹45,000</span>
-                                <span class="trade-status completed">Completed</span>
-                            </div>
-                            <div class="trade-description">
-                                Monthly supply of packaging boxes and labels.
-                            </div>
-                        </div>
+                          
+         
+                        {% else %}
+                          <p>No jobs posted yet.</p>
+                        {% endfor %}
+                    </div>
+                    </div>
+                </div>
                     </div>
                 </div>
 
@@ -600,59 +581,58 @@
     </div>
   </div>
 
-<!-- ================ Add Trade ================= -->
-<div id="editTradeProfileModal" class="modal-overlay">
+<!-- ================= ADD / EDIT TRADE MODAL ================= -->
+<div id="tradeModal" class="modal-overlay">
     <div class="modal-card">
-
-        <div class="modal-header">
-            <h2>Add Selling Product</h2>
-            <button class="close-btn" onclick="closeTradeEditModal()">×</button>
-        </div>
-
-        <form action="company/additem" method="POST" enctype="multipart/form-data" id="editTadeProfileForm">
-            <div class="form-group">
-                <label>Product Name *</label>
-                <input type="text" name="sell_name" required>
-            </div>
-
-            <div class="form-group">
-                <label>Product Category *</label>
-                <input type="text" name="sell_category" required>
-            </div>
-
-            <div class="form-group">
-                <label>Product Description *</label>
-                <input type="text" name="sell_description" required>
-            </div>
-
-            <div class="form-group">
-                <label>Product Price *</label>
-                <input type="number" name="sell_price" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Minimum Order Quantity *</label>
-                <input type="number" name="sell_quantity" required>
-            </div>
-
-            <div class="form-group">
-                <label>Add Product Images</label>
-                <input 
-                    type="file" 
-                    name="sell_images[]" 
-                    accept="image/*" 
-                    multiple 
-                >
-            </div>            
-
-            <div class="modal-footer">
-                <button type="submit" class="btn-save">Save Changes</button>
-            </div>
-        </form>
-
+  
+      <div class="modal-header">
+        <h2 id="tradeModalTitle">Add Selling Product</h2>
+        <button class="close-btn" onclick="closeTradeModal()">×</button>
       </div>
+  
+      <form method="POST" action="/company/additem" enctype="multipart/form-data">
+  
+        <!-- Hidden ID (empty = add, filled = edit) -->
+        <input type="hidden" name="sell_id" id="sell_id">
+  
+        <div class="form-group">
+          <label>Product Name *</label>
+          <input type="text" name="sell_name" id="sell_name" required>
+        </div>
+  
+        <div class="form-group">
+          <label>Product Category *</label>
+          <input type="text" name="sell_category" id="sell_category" required>
+        </div>
+  
+        <div class="form-group">
+          <label>Product Description *</label>
+          <input type="text" name="sell_description" id="sell_description" required>
+        </div>
+  
+        <div class="form-group">
+          <label>Product Price *</label>
+          <input type="number" name="sell_price" id="sell_price" required>
+        </div>
+  
+        <div class="form-group">
+          <label>Minimum Order Quantity *</label>
+          <input type="number" name="sell_quantity" id="sell_quantity" required>
+        </div>
+  
+        <div class="form-group">
+          <label>Add Product Images</label>
+          <input type="file" name="sell_images[]" accept="image/*" multiple>
+        </div>
+  
+        <div class="modal-footer">
+          <button type="submit" class="btn-save">Save Product</button>
+        </div>
+      </form>
+  
     </div>
-
+  </div>
+  
 <script src="{{ url_for('static', filename='js/companyprofile.js')}}"></script>
 </body>
 </html>

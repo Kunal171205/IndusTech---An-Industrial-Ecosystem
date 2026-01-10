@@ -127,12 +127,29 @@ function openJobModal() {
   
 
   /* Profit Trade item form edit pop-up*/
-function openTradeEditModal() {
-    document.getElementById("editTradeProfileModal").style.display = "flex";
-}
+  function openTradeModal() {
+    document.getElementById("tradeModalTitle").innerText = "Add Selling Product";
+    document.getElementById("sell_id").value = "";
+    document.querySelector("form").reset();
+    document.getElementById("tradeModal").style.display = "flex";
+  }
 
-function closeTradeEditModal() {
-    document.getElementById("editTradeProfileModal").style.display = "none";
+  function editTrade(id, name, category, description, price, quantity) {
+    document.getElementById("tradeModalTitle").innerText = "Edit Selling Product";
+  
+    document.getElementById("sell_id").value = id;
+    document.getElementById("sell_name").value = name;
+    document.getElementById("sell_category").value = category;
+    document.getElementById("sell_description").value = description;
+    document.getElementById("sell_price").value = price;
+    document.getElementById("sell_quantity").value = quantity;
+  
+    document.getElementById("tradeModal").style.display = "flex";
+  }
+  
+
+function closeTradeModal() {
+    document.getElementById("tradeModal").style.display = "none";
 }
 
 document.getElementById("editTradeProfileForm").addEventListener("submit", function(e) {

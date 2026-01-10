@@ -93,6 +93,39 @@ padding: 35px 20px;
 color: white;
 }
 
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 25px;
+}
+
+
+.page-btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #0a438b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.page-btn:hover {
+  background: #0a438b;
+  color: white;
+}
+
+.page-btn.active {
+  background: #0a438b;
+  color: white;
+  pointer-events: none;
+}
+
+.dots {
+  padding: 8px;
+  color: #64748b;
+}
+
 .hero-content {
 max-width: 1200px;
 margin: auto;

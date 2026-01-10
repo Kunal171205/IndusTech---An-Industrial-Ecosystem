@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Job Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static',filename='css/product_view.css') }}">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}" > <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}" class="active"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    {% if session.get('user_type') == 'worker' %}
+      <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+    <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% elif session.get('user_type') == 'company' %}
+    <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
+    <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    {% else %}
+    <a href="{{ url_for('login') }}" class="signup">Login</a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="container">
+  <a href="#" class="back">← Back to Jobs</a>
+
+  <div class="main">
+
+    <!-- LEFT COLUMN -->
+    <div class="left">
+
+      <!-- JOB CARD -->
+      <div class="card job-card">
+
+        <div class="job-layout">
+
+          <!-- INFO (LEFT) -->
+          <div class="job-info">
+            <div class="title-row">
+              <div>
+                <h2>junior engineer</h2>
+                <p class="company">GENZTECH</p>
+              </div>
+              <div class="icons">❤️ 🔗</div>
+            </div>
+
+            <div class="salary">₹ 8000</div>
+
+            <div class="tags">
+              <span>📍 Pune</span>
+              <span>⏰ 11:29 AM – 08:30 PM</span>
+              <span>👥 9 Openings</span>
+              <span>🔥 Part Time</span>
+            </div>
+
+            <div class="section">
+              <h3>Job Description</h3>
+              <p>Production worker.</p>
+            </div>
+          </div>
+
+          <!-- IMAGE (RIGHT) -->
+          <div class="job-image">
+            <div class="job-carousel">
+              <button class="carousel-btn left" onclick="prevImg()">‹</button>
+              <img id="jobImg"
+                   src="https://images.unsplash.com/photo-1581091215367-59ab6c77ff54">
+              <button class="carousel-btn right" onclick="nextImg()">›</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ABOUT COMPANY -->
+      <div class="card">
+        <h3>About the Company</h3>
+        <div class="company-box">
+          <div class="icon">🏭</div>
+          <div>
+            <strong>GENZTECH</strong>
+            <p>production</p>
+            <small>Rameshwaram · 120</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right">
+      <div class="apply-card">
+        <h3>Ready to Apply?</h3>
+        <p>📍 Pune</p>
+        <p>⏰ 11:29 AM – 08:30 PM</p>
+
+        <button class="apply-btn">Apply Now</button>
+        <button class="contact-btn">Contact Company</button>
+
+        <small>Posted on 03 Jan 2026</small>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/product_view.js') }}"></script>
+</body>
+</html>

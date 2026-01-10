@@ -282,6 +282,76 @@
                 
                 </div>
               
+                <!-- ================= MY APPLICATIONS ================= -->
+<div class="profile-card">
+  <h3>
+    <i class="fas fa-paper-plane"></i>
+    My Applications
+  </h3>
+
+  {% if applications %}
+    {% for app in applications %}
+      <div class="application-item">
+
+        <!-- HEADER -->
+        <div class="app-header">
+          <h4>{{ app.job.job_title }}</h4>
+          <span class="app-status {{ app.applicant_status }}">
+            {{ app.applicant_status|capitalize }}
+          </span>
+        </div>
+
+        <!-- DETAILS -->
+        <div class="app-details">
+          <span>
+            <i class="fas fa-building"></i>
+            {{ app.job.company.company_name }}
+          </span>
+          <span>
+            <i class="fas fa-map-marker-alt"></i>
+            {{ app.job.city }}
+          </span>
+          <span>
+            <i class="fas fa-calendar"></i>
+            {{ app.application_date.strftime('%d %b %Y') }}
+          </span>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="app-actions">
+
+          <!-- VIEW JOB -->
+          <a href="{{ url_for('jobvisit', job_id=app.job.job_id) }}"
+             class="btn-view">
+            <i class="fas fa-eye"></i> View Job
+          </a>
+
+          <!-- EDIT APPLICATION -->
+          <button class="btn-edit"
+            onclick="editApplication(
+              '{{ app.application_id }}',
+              '{{ app.applicant_skill }}',
+              '{{ app.applicant_location }}'
+            )">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+
+          <!-- DELETE APPLICATION -->
+          <form method="POST"
+                action="{{ url_for('delete_worker_application', app_id=app.application_id) }}"
+                onsubmit="return confirm('Delete this application?');">
+            <button type="submit" class="btn-delete">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </form>
+
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted">You have not applied to any jobs yet.</p>
+  {% endif %}
+</div>
 
                 <!-- Work Experience -->
                 <div class="profile-card">
@@ -622,6 +692,35 @@
     <p>+91 98765 43210</p>
   </div>
 </footer>
+<div id="editApplicationModal" class="modal-overlay">
+  <div class="modal-card">
+
+    <div class="modal-header">
+      <h2>Edit Application</h2>
+      <button class="close-btn" onclick="closeAppModal()">×</button>
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_application') }}">
+      <input type="hidden" name="application_id" id="application_id">
+
+      <div class="form-group">
+        <label>Skills</label>
+        <input type="text" name="applicant_skill" id="applicant_skill">
+      </div>
+
+      <div class="form-group">
+        <label>Preferred Location</label>
+        <input type="text" name="applicant_location" id="applicant_location">
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" class="btn-save">Update Application</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
 <script src="{{ url_for('static' ,filename='js/workerprofile.js') }}"></script>
 </body>
 </html>

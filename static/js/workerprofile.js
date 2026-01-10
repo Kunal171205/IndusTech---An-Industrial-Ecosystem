@@ -200,3 +200,16 @@
                     alert("Server error");
                   });
                 }
+
+
+                function editApplication(id, skill, location) {
+                  document.getElementById("application_id").value = id;
+                  document.getElementById("applicant_skill").value = skill;
+                  document.getElementById("applicant_location").value = location;
+                  document.getElementById("editApplicationModal").style.display = "flex";
+                }
+                
+                function closeAppModal() {
+                  document.getElementById("editApplicationModal").style.display = "none";
+                }
+                
