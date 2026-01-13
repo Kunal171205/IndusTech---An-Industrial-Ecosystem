@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config.from_object(config)
 db.init_app(app)
 
-from models import Worker , WorkExperience, Certification, Education ,Company, JobPost, sellitem, Application  # import AFTER db.init_app
+from models import Worker, TradeRequest , WorkExperience, Certification, Education ,Company, JobPost, sellitem, Application  # import AFTER db.init_app
 
 
 @app.route("/")
@@ -76,6 +76,33 @@ def jobportal():
         pagination=pagination
     )
 
+
+@app.route("/trade/<int:sell_id>")
+def tradevisit(sell_id):
+    sell = sellitem.query.get_or_404(sell_id)
+
+    worker = None
+    if session.get("user_type") == "worker":
+        worker = Worker.query.get(session.get("worker_id"))
+
+    images = []
+    if sell.sell_image:
+        images = json.loads(sell.sell_image)  
+
+    worker_age = None
+    if worker and worker.dob:
+        today = date.today()
+        worker_age = today.year - worker.dob.year - (
+            (today.month, today.day) < (worker.dob.month, worker.dob.day)
+        )
+
+    
+
+    return render_template(
+        "product_view.html",
+        sell=sell,
+        images=images
+    )
 
 @app.route("/job/<int:job_id>")
 def jobvisit(job_id):
@@ -173,6 +200,32 @@ def delete_company_application(application_id):
 
     flash("Application removed successfully", "success")
     return redirect(request.referrer)
+
+@app.route("/company/trade/<int:sell_id>/applications")
+def view_trade_applications(sell_id):
+
+    if session.get("user_type") != "company":
+        return redirect(url_for("login"))
+
+    company_id = session.get("company_id")
+
+    item = sellitem.query.filter_by(
+        sell_id=sell_id,
+        company_id=company_id
+    ).first_or_404()
+
+    applications = TradeRequest.query.filter_by(
+        sell_id=sell_id
+    ).order_by(
+        TradeRequest.created_at.desc()
+    ).all()
+
+    return render_template(
+        "trade_application.html",
+        item=item,
+        applications=applications
+    )
+
 
 @app.route("/company/job/<int:job_id>/applications")
 def view_job_applications(job_id):
@@ -774,6 +827,57 @@ def create_or_edit_job():
 
     db.session.commit()
     return redirect(url_for("companyprofile"))
+@app.route("/trade/apply", methods=["POST"])
+def apply_trade():
+    user_type = session.get("user_type")
+
+    if user_type not in ["company", "worker"]:
+        flash("Please login to apply for trade", "danger")
+        return redirect(url_for("login"))
+
+    buyer_id = session.get("worker_id") if user_type == "worker" else session.get("company_id")
+
+    sell_id = int(request.form.get("sell_id"))
+    sell = sellitem.query.get_or_404(sell_id)
+
+    if user_type == "company" and sell.company_id == buyer_id:
+        flash("You cannot apply to your own product", "danger")
+        return redirect(request.referrer)
+
+    quantity = request.form.get("quantity")
+    expected_price = request.form.get("expected_price")
+    message = request.form.get("message")
+
+    if not quantity:
+        flash("Quantity is required", "danger")
+        return redirect(request.referrer)
+
+    existing = TradeRequest.query.filter_by(
+        sell_id=sell_id,
+        buyer_id=buyer_id,
+        buyer_type=user_type,
+        status="pending"
+    ).first()
+
+    if existing:
+        flash("You already sent a request for this product", "warning")
+        return redirect(request.referrer)
+
+    trade_request = TradeRequest(
+        sell_id=sell_id,
+        buyer_id=buyer_id,
+        buyer_type=user_type,
+        quantity=int(quantity),
+        expected_price=float(expected_price) if expected_price else None,
+        message=message
+    )
+
+    db.session.add(trade_request)
+    db.session.commit()
+
+    flash("Trade request sent successfully!", "success")
+    return redirect(request.referrer)
+
 
 @app.route("/apply", methods=["POST"])
 def applyjob():

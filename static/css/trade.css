@@ -131,6 +131,18 @@ max-width: 1200px;
 margin: auto;
 margin-left: 28px;
 }
+.job-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.job-card-link:hover .job-card {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  transition: all 0.25s ease;
+}
+
 
 .b2b-hero h1 {
 font-size: 44px;

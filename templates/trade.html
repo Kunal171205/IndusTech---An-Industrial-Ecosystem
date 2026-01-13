@@ -208,6 +208,7 @@
       <div class="products-grid">
         {% for item in sell_items %}
         <!-- PRODUCT CARD -->
+        <a href="{{ url_for('tradevisit', sell_id=item.sell_id) }}" class="job-card-link">
         <div class="product-card">
             <!-- IMAGE / PLACEHOLDER AREA -->
             <div class="product-image">

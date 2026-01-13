@@ -133,7 +133,7 @@ class JobPost(db.Model):
         db.ForeignKey("company.id"),
         nullable=False
     )
-
+    
     job_title = db.Column(db.String(120), nullable=False)#
     job_type = db.Column(db.String(120), nullable=False)#
     city = db.Column(db.String(120), nullable=False)#
@@ -195,3 +195,36 @@ class sellitem(db.Model):
     def __repr__(self):
         return f"<sellitem {self.sell_name} - ₹{self.sell_price}>"
 
+from sqlalchemy.orm import foreign
+class TradeRequest(db.Model):
+    __tablename__ = "trade_request"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    sell_id = db.Column(
+        db.Integer,
+        db.ForeignKey("sell_item.sell_id"),
+        nullable=False
+    )
+
+    buyer_id = db.Column(db.Integer, nullable=False)
+    buyer_type = db.Column(db.String(20), nullable=False)  
+    # "worker" or "company"
+
+    quantity = db.Column(db.Integer, nullable=False)
+    expected_price = db.Column(db.Float, nullable=True)
+    message = db.Column(db.Text, nullable=True)
+
+    status = db.Column(db.String(20), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sell = db.relationship("sellitem", backref="trade_requests")
+    
+    @property
+    def buyer_name(self):
+        if self.buyer_type == "worker":
+            worker = Worker.query.get(self.buyer_id)
+            return worker.name if worker else "Unknown Worker"
+        else:
+            company = Company.query.get(self.buyer_id)
+            return company.company_name if company else "Unknown Company"

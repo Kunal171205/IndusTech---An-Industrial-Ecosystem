@@ -308,7 +308,10 @@
                                 <span class="trade-amount">₹{{ item.sell_price }}</span>
                                 <div class="job-action-buttons">
                                     
-                              
+                                    <a href="{{ url_for('view_trade_applications', sell_id=item.sell_id) }}"
+                                class="btn-view-applications">
+                                View Applications ({{ item.trade_requests|length }})
+                            </a>
                                     <button class="btn-edit-job"
                                       onclick="editTrade(
                                         '{{ item.sell_id }}',

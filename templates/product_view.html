@@ -11,6 +11,15 @@
   <link rel="stylesheet" href="{{ url_for('static',filename='css/product_view.css') }}">
 </head>
 <body>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 <!-- ================= NAVBAR ================= -->
 <header class="navbar">
@@ -59,24 +68,38 @@
           <div class="job-info">
             <div class="title-row">
               <div>
-                <h2>junior engineer</h2>
-                <p class="company">GENZTECH</p>
+                <h2>{{ sell.sell_name }}</h2>
+                <p class="company">{{ sell.company.company_name }}</p>
               </div>
-              <div class="icons">❤️ 🔗</div>
+             
+              <div class="job-header-actions">
+                <button class="icon-btn" title="Save Job">
+                  <i class="fa-regular fa-heart"></i>
+                </button>
+            
+                <button class="icon-btn" id="shareJobBtn"  title="Share Job">
+                  <i class="fa-solid fa-share-nodes"></i>
+                </button>
+              </div>
+
             </div>
 
-            <div class="salary">₹ 8000</div>
+            <div class="salary">Sell Price : {{ sell.sell_price }}Rs/Per Unit</div>
 
             <div class="tags">
-              <span>📍 Pune</span>
-              <span>⏰ 11:29 AM – 08:30 PM</span>
+              <span>📍 Minimum Order Quantity : {{ sell.sell_quantity }}</span>
+              <!-- <span>⏰ 11:29 AM – 08:30 PM</span>
               <span>👥 9 Openings</span>
-              <span>🔥 Part Time</span>
+              <span>🔥 Part Time</span> -->
             </div>
 
             <div class="section">
-              <h3>Job Description</h3>
-              <p>Production worker.</p>
+              <h3>Product Category : {{ sell.sell_category }}</h3>
+            </div>
+
+            <div class="section">
+              <h3>Product Description</h3>
+              <p>{{ sell.sell_description }}</p>
             </div>
           </div>
 
@@ -85,7 +108,8 @@
             <div class="job-carousel">
               <button class="carousel-btn left" onclick="prevImg()">‹</button>
               <img id="jobImg"
-                   src="https://images.unsplash.com/photo-1581091215367-59ab6c77ff54">
+              src="{{ url_for('static', filename='uploads/sell_items/' ~ images[0]) }}"
+              alt="Product Image">
               <button class="carousel-btn right" onclick="nextImg()">›</button>
             </div>
           </div>
@@ -93,38 +117,150 @@
         </div>
       </div>
 
-      <!-- ABOUT COMPANY -->
-      <div class="card">
-        <h3>About the Company</h3>
+      
+    <!-- ===== COMPANY INFO ===== -->
+  <section class="card company-card">
+    <h3>About the Company</h3>
+  
+    <a href="{{ url_for('companyprofile_public', company_id=sell.company.id) }}" class="company-link"> 
         <div class="company-box">
-          <div class="icon">🏭</div>
-          <div>
-            <strong>GENZTECH</strong>
-            <p>production</p>
-            <small>Rameshwaram · 120</small>
+          <div class="company-icon">
+            <i class="fa-solid fa-industry"></i>
+          </div>
+      
+          <div class="company-details">
+            <h4 class="company-name-title">{{ sell.company.company_name }}</h4>
+            <p class="company-type">{{ sell.company.company_category or "Industry" }}</p>
+      
+            <div class="company-meta">
+              <span>{{ sell.company.company_city | title }}</span>
+              <span>{{ sell.company.company_size or "" }}</span>
+            </div>
           </div>
         </div>
-      </div>
+      </a>      
+  </section>
 
     </div>
 
-    <!-- RIGHT COLUMN -->
-    <div class="right">
-      <div class="apply-card">
+    <!-- ===== RIGHT CARD ===== -->
+    <div class="apply-card">
+
+      <!-- ================= SUMMARY VIEW ================= -->
+      <div id="applySummary">
+    
         <h3>Ready to Apply?</h3>
-        <p>📍 Pune</p>
-        <p>⏰ 11:29 AM – 08:30 PM</p>
-
-        <button class="apply-btn">Apply Now</button>
-        <button class="contact-btn">Contact Company</button>
-
-        <small>Posted on 03 Jan 2026</small>
+    
+       
+    
+        <button class="apply-btn" onclick="showApplyForm()">
+          <i class="fa-regular fa-circle-check"></i> Apply Now
+        </button>
+    
+        <a href="tel:{{ sell.company.email }}" class="contact-btn">
+          <i class="fa-solid fa-phone"></i> Contact Company
+        </a>
+    
+        <p class="posted-date">
+          Posted on {{ sell.created_at.strftime("%d %b %Y") }}
+        </p>
+    
       </div>
-    </div>
 
-  </div>
+  
+  
+  <!-- ================= APPLY FORM VIEW ================= -->
+  <div id="applyFormContainer" style="display:none;">
+    <h3>Apply for this Job</h3>
+
+    <form method="POST" action="{{ url_for('apply_trade') }}">
+      <input type="hidden" name="sell_id" value="{{ sell.sell_id }}">
+    
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" name="quantity" required>
+      </div>
+    
+      <div class="form-group">
+        <label>Expected Price</label>
+        <input type="number" step="0.01" name="expected_price">
+      </div>
+    
+      <div class="form-group">
+        <label>Message</label>
+        <input name="message">
+      </div>
+    
+      <button type="submit" class="apply-btn full">
+        Submit Application
+      </button>
+    
+
+      <button type="button" class="contact-btn outline"
+              onclick="cancelApplyForm()">
+        Cancel
+      </button>
+
+    </form>
 </div>
+  </div>
+<script>
+  const images = [
+    {% for img in images %}
+      "{{ url_for('static', filename='uploads/sell_items/' ~ img) }}",
+    {% endfor %}
+  ];
 
+  let currentIndex = 0;
+
+  function nextImg() {
+    currentIndex = (currentIndex + 1) % images.length;
+    document.getElementById("jobImg").src = images[currentIndex];
+  }
+
+  function prevImg() {
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
+    document.getElementById("jobImg").src = images[currentIndex];
+  }
+</script>
+
+<script>
+  function showApplyForm() {
+    document.getElementById("applySummary").style.display = "none";
+    document.getElementById("applyFormContainer").style.display = "block";
+  }
+  
+  function cancelApplyForm() {
+    document.getElementById("applyFormContainer").style.display = "none";
+    document.getElementById("applySummary").style.display = "block";
+  }
+  </script>
+  
+  
+<script>
+    document.getElementById("shareJobBtn").addEventListener("click", async () => {
+      const shareData = {
+        title: "Production Helper - IndusTech",
+        text: "Check out this job opening at ABC Manufacturing Pvt Ltd",
+        url: window.location.href
+      };
+  
+      // ✅ Modern mobile & supported browsers
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          console.log("Share cancelled");
+        }
+      } 
+      // 🧠 Desktop fallback
+      else {
+        navigator.clipboard.writeText(shareData.url);
+        alert("Job link copied to clipboard!");
+      }
+    });
+  </script>
+  
 <script src="{{ url_for('static', filename='js/product_view.js') }}"></script>
 </body>
 </html>
