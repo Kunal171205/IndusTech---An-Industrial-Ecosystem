@@ -72,8 +72,8 @@
       
     </div>
   </section>
-  
-  <!-- CATEGORY FILTERS -->
+<!--   
+  -- CATEGORY FILTERS 
   <section class="category-bar">
     <span class="label">Categories:</span>
   
@@ -85,7 +85,7 @@
     <button class="cat">Packaging</button>
     <button class="cat">Textiles</button>
   </section>
-  
+-->
 
 <!-- MAIN -->
 <main class="container">
@@ -94,82 +94,54 @@
 
     <!-- LEFT SIDEBAR -->
     <aside class="featured-suppliers">
-        <h3>Featured Suppliers</h3>
-      
-        <div class="supplier-list">
-      
-          <a href="#" class="supplier-item">
-            <div class="supplier-icon">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <div class="supplier-text">
-              <div class="supplier-name">ABC Manufacturing Pvt Ltd</div>
-              <div class="supplier-meta">
-                <i class="fa-solid fa-star"></i>
-                <span>4.5</span>
-                <i class="fa-solid fa-circle-check verified"></i>
-              </div>
-            </div>
-          </a>
-      
-          <a href="#" class="supplier-item">
-            <div class="supplier-icon">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <div class="supplier-text">
-              <div class="supplier-name">XYZ Textiles</div>
-              <div class="supplier-meta">
-                <i class="fa-solid fa-star"></i>
-                <span>4.2</span>
-                <i class="fa-solid fa-circle-check verified"></i>
-              </div>
-            </div>
-          </a>
-      
-          <a href="#" class="supplier-item">
-            <div class="supplier-icon">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <div class="supplier-text">
-              <div class="supplier-name">BuildRight Construction</div>
-              <div class="supplier-meta">
-                <i class="fa-solid fa-star"></i>
-                <span>4.0</span>
-              </div>
-            </div>
-          </a>
-      
-          <a href="#" class="supplier-item">
-            <div class="supplier-icon">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <div class="supplier-text">
-              <div class="supplier-name">ChemTech Solutions</div>
-              <div class="supplier-meta">
-                <i class="fa-solid fa-star"></i>
-                <span>4.3</span>
-                <i class="fa-solid fa-circle-check verified"></i>
-              </div>
-            </div>
-          </a>
-      
-          <a href="#" class="supplier-item">
-            <div class="supplier-icon">
-              <i class="fa-solid fa-chart-line"></i>
-            </div>
-            <div class="supplier-text">
-              <div class="supplier-name">FreshPack Foods</div>
-              <div class="supplier-meta">
-                <i class="fa-solid fa-star"></i>
-                <span>4.6</span>
-                <i class="fa-solid fa-circle-check verified"></i>
-              </div>
-            </div>
-          </a>
-      
+        <h3>Apply Filters</h3>
+        <div class="filter-grid" id="filterPanel">
+
+          
+          <!-- Shift -->
+          <div class="filter-box">
+            <h4>Sort by Date</h4>
+            <select class="filter-select" id="shiftFilter">
+              <option value="">Any</option>
+              <option value="NF">Newest First</option>
+              <option value="OF">Oldest First</option>
+            </select>
+          </div>
+        
+          <!-- Salary -->
+          <div class="filter-box">
+            <h4>Minimum Quantity</h4>
+            <select class="filter-select" id="salaryFilter">
+              <option value="">Any</option>
+              <option value="050">Less than 50</option>
+              <option value="100">More than 100</option>
+              <option value="50100">More than 50</option>
+            </select>
+          </div>
+        
+          <!-- Openings -->
+          <div class="filter-box">
+            <h4>Filter by Price</h4>
+            <select class="filter-select" id="openingFilter">
+              <option value="">Any</option>
+              <option value="l2h">Low to High</option>
+              <option value="h2l">High to Low</option>
+            </select>
+          </div>
+        
+          <!-- Clear -->
+          
+            <button class="apply-btn" id="applyFiltersBtn">
+              Apply Filters
+            </button>
+            <button class="clear-btn">
+              Clear Filters
+            </button>
+          
+          
+        
         </div>
       
-        <a href="#" class="view-all">View All Suppliers</a>
       </aside>
       
       
@@ -193,12 +165,6 @@
               </button>
             </div>
           
-            <!-- SORT -->
-            <select>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-            </select>
-          
           </div>
           
       </div>
@@ -206,19 +172,34 @@
 
       <div class="products-scroll"> 
       <div class="products-grid">
-        {% for item in sell_items %}
-        <!-- PRODUCT CARD -->
-        <a href="{{ url_for('tradevisit', sell_id=item.sell_id) }}" class="job-card-link">
-        <div class="product-card">
-            <!-- IMAGE / PLACEHOLDER AREA -->
-            <div class="product-image">
-                <!-- CASE 1: If image exists -->
-                <!-- <img src="pipe.jpg" alt="Industrial Steel Pipes"> -->
-
-                <!-- CASE 2: If image NOT available -->
-                <i class="fa-solid fa-box"></i>
-            </div>
-
+            
+          {% for item in sell_items %}
+          <a href="{{ url_for('tradevisit', sell_id=item.sell_id) }}" class="job-card-link">
+          
+            <div class="product-card">
+          
+              {% if item.images and item.images|length > 0 %}
+          
+                <!-- IMAGE CAROUSEL -->
+                <div class="job-carousel"
+                     data-images='{{ item.images | tojson }}'
+                     data-index="0">
+          
+                  <img class="job-img"
+                       src="{{ url_for('static', filename='uploads/sell_items/' ~ item.images[0]) }}"
+                       alt="Product Image"
+                       onclick="event.stopPropagation()">
+                </div>
+          
+              {% else %}
+          
+                <!-- FALLBACK ICON -->
+                <div class="product-image">
+                  <i class="fa-solid fa-box"></i>
+                </div>
+          
+              {% endif %}
+         
             <!-- CONTENT -->
             <div class="product-body">
                 <span class="product-category">{{ item.sell_category }}</span>
@@ -270,40 +251,35 @@
     <p>Register as a supplier and reach thousands of businesses</p>
 
     <div class="cta-buttons">
-      <button class="primary">Register as a Supplier</button>
-      <button class="secondary">Supplier Login</button>
+      <a href="{{ url_for('signup')}}" class="cta-btn primary">Register as a Supplier</a>
+      <a href="{{ url_for('login')}}" class="cta-btn secondary">Supplier Login</a>
     </div>
   </section>
 
 </main>
 
-<!-- FOOTER -->
-<footer class="footer">
-  <div>
-    <h4>IndusTech</h4>
-    <p>Connecting industries, workers, and businesses.</p>
-  </div>
-
-  <div>
-    <h4>Quick Links</h4>
-    <a href="#">Industrial Map</a>
-    <a href="#">Job Portal</a>
-    <a href="#">B2B Trade</a>
-  </div>
-
-  <div>
-    <h4>For Users</h4>
-    <a href="#">Register as Worker</a>
-    <a href="#">Register as Company</a>
-  </div>
-
-  <div>
-    <h4>Contact</h4>
-    <p>contact@industech.in</p>
-    <p>+91 98765 43210</p>
-  </div>
-</footer>
-
+<!-- FOOTER --><footer>
+        <div class="footer-content">
+          <div class="footer-section">
+              <h4>IndusTech</h4>
+              <p>Connecting India's industrial workforce with opportunities.</p>
+          </div>
+          <div class="footer-section">
+              <h4>Quick Links</h4>
+              <a href="home.html">Home</a>
+              <a href="job-portal.html">Find Jobs</a>
+              <a href="industry-map.html">Industry Map</a>
+              <a href="b2btrade.html">B2B Trade</a>
+          </div>
+          <div class="footer-section">
+              <h4>Support</h4>
+              <a href="#">Help Center</a>
+              <a href="#">Contact Us</a>
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+          </div>
+      </div>
+  </footer>
 <script>
     const gridBtn = document.getElementById("gridView");
     const listBtn = document.getElementById("listView");
@@ -321,6 +297,57 @@
       gridBtn.classList.remove("active");
     });
   </script>
-  
+  <script>
+    let hoverTimers = new WeakMap();
+    
+    document.querySelectorAll('.job-carousel').forEach(carousel => {
+      const images = JSON.parse(carousel.dataset.images || '[]');
+      if (images.length <= 1) return;
+    
+      const img = carousel.querySelector('.job-img');
+    
+      carousel.addEventListener('mouseenter', () => {
+        let index = 0;
+    
+        const timer = setInterval(() => {
+          index = (index + 1) % images.length;
+          img.style.opacity = '0';
+    
+          setTimeout(() => {
+            img.src = `/static/uploads/sell_items/${images[index]}`;
+            img.style.opacity = '1';
+          }, 200);
+    
+        }, 900);
+    
+        hoverTimers.set(carousel, timer);
+      });
+    
+      carousel.addEventListener('mouseleave', () => {
+        clearInterval(hoverTimers.get(carousel));
+        hoverTimers.delete(carousel);
+    
+        // reset to first image
+        img.src = `/static/uploads/sell_items/${images[0]}`;
+        img.style.opacity = '1';
+      });
+    });
+
+    document.getElementById("applyFiltersBtn").addEventListener("click", () => {
+  const date = document.getElementById("shiftFilter").value;
+  const qty = document.getElementById("salaryFilter").value;
+  const price = document.getElementById("openingFilter").value;
+
+  const params = new URLSearchParams({
+    date,
+    qty,
+    price
+  });
+
+  window.location.href = `/trade?${params.toString()}`;
+});
+
+    </script>
+    
 </body>
 </html>

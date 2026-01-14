@@ -186,102 +186,26 @@
     </div>
   
     <div class="jobs-grid">
-  
+      
+    {% for job in jobs %}
       <!-- JOB CARD -->
     <div class="job-card">
+      <a href="{{ url_for('jobvisit' , job_id=job.job_id)}}" class="job-link">
         <div class="job-top">
-            <span class="salary">Construction Worker</span>
-            <span class="salary">₹500/day</span>
+            <span class="salary">{{ job.job_title | title}}</span>
+            <span class="salary">₹{{ job.salary }}/day</span>
         </div>
   
         
-        <p class="company">BuildRight Construction</p>
+        <p class="company">{{ job.company.company_name | title }}</p>
   
         <div class="job-meta">
-          <span>📍 3.5 km</span>
-          <span>👥 10 positions</span>
+          <span>📍 {{ job.city | title }}</span>
+          <span>👥 {{ job.job_opening_no }} Openings </span>
         </div>
-
+      </a>
     </div>
-
-    <div class="job-card">
-        <div class="job-top">
-            <span class="salary">Factory Housekeeping Staff</span>
-            <span class="salary">₹300/day</span>
-        </div>
-  
-        
-        <p class="company">Builder Construction</p>
-  
-        <div class="job-meta">
-          <span>📍 2.5 km</span>
-          <span>👥 5 positions</span>
-        </div>
-
-    </div>
-
-    <div class="job-card">
-        <div class="job-top">
-            <span class="salary">Factory Worker</span>
-            <span class="salary">₹700/day</span>
-        </div>
-  
-        
-        <p class="company">Tata Steel</p>
-  
-        <div class="job-meta">
-          <span>📍 5 km</span>
-          <span>👥 15 positions</span>
-        </div>
-
-    </div>
-
-    <div class="job-card">
-        <div class="job-top">
-            <span class="salary">Security Guard</span>
-            <span class="salary">₹900/day</span>
-        </div>
-        
-        <p class="company">Icon Power</p>
-  
-        <div class="job-meta">
-          <span>📍 6.5 km</span>
-          <span>👥 4 positions</span>
-        </div>
-
-    </div>
-
-    <div class="job-card">
-        <div class="job-top">
-            <span class="salary">Helper</span>
-            <span class="salary">₹300/day</span>
-        </div>
-  
-        
-        <p class="company">BuildRight Const</p>
-  
-        <div class="job-meta">
-          <span>📍 2 km</span>
-          <span>👥 1 positions</span>
-        </div>
-
-    </div>
-    
-      <div class="job-card">
-        <div class="job-top">
-          <span class="salary">Maintenance Helper</span>
-          <span class="salary">₹450/day</span>
-        </div>
-  
-        <p class="company">ChemTech Solutions</p>
-  
-        <div class="job-meta">
-          <span>📍 6 km</span>
-          <span>👥 2 positions</span>
-        </div>
-      </div>
-  
-    </div>
+    {% endfor %}
   </section>
   
 <!-- =================== Industry Profile ==============-->
@@ -466,30 +390,26 @@
   
 
 <!-- ================= FOOTER ================= -->
-<footer class="footer">
-  <div>
-    <h4>IndusTech</h4>
-    <p>Connecting industries, workers, and businesses in one platform.</p>
-  </div>
-
-  <div>
-    <h4>Quick Links</h4>
-    <a>Industrial Map</a>
-    <a>Job Portal</a>
-    <a>B2B Trade</a>
-  </div>
-
-  <div>
-    <h4>For Users</h4>
-    <a>Register as Worker</a>
-    <a>Register as Company</a>
-    <a>Find Jobs</a>
-  </div>
-
-  <div>
-    <h4>Contact</h4>
-    <p>contact@industech.in</p>
-    <p>+91 98765 43210</p>
+<footer>
+  <div class="footer-content">
+      <div class="footer-section">
+          <h4>IndusTech</h4>
+          <p>Connecting India's industrial workforce with opportunities.</p>
+      </div>
+      <div class="footer-section">
+          <h4>Quick Links</h4>
+          <a href="home.html">Home</a>
+          <a href="job-portal.html">Find Jobs</a>
+          <a href="industry-map.html">Industry Map</a>
+          <a href="b2btrade.html">B2B Trade</a>
+      </div>
+      <div class="footer-section">
+          <h4>Support</h4>
+          <a href="#">Help Center</a>
+          <a href="#">Contact Us</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+      </div>
   </div>
 </footer>
 

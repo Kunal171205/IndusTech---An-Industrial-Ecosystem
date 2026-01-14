@@ -182,7 +182,8 @@
     {% endif %}
   
   </div>
-  
+</div>
+</div>
 </section>
 
 <!-- CTA -->
@@ -190,32 +191,32 @@
   <h2>Looking to Hire Workers?</h2>
   <p>Post jobs and connect with thousands of verified workers near your location.</p>
   <div class="cta-buttons">
-    <button class="cta-btn primary">Register as Company</button>
-    <button class="cta-btn secondary">Company Login</button>
+    <a href='{{ url_for('signup') }}' class="cta-btn primary">Register as Company</a>
+    <a href='{{ url_for('login') }}' class="cta-btn secondary">Company Login</a>
   </div>  
 </section>
 
 <!-- FOOTER -->
-<footer class="footer">
-  <div>
-    <h4>IndusTech</h4>
-    <p>Connecting industries, workers, and businesses.</p>
-  </div>
-  <div>
-    <h4>Quick Links</h4>
-    <a href="#">Industrial Map</a>
-    <a href="#">Job Portal</a>
-    <a href="#">B2B Trade</a>
-  </div>
-  <div>
-    <h4>For Users</h4>
-    <a href="#">Register as Worker</a>
-    <a href="#">Register as Company</a>
-  </div>
-  <div>
-    <h4>Contact</h4>
-    <p>contact@industech.in</p>
-    <p>+91 98765 43210</p>
+<footer>
+  <div class="footer-content">
+      <div class="footer-section">
+          <h4>IndusTech</h4>
+          <p>Connecting India's industrial workforce with opportunities.</p>
+      </div>
+      <div class="footer-section">
+          <h4>Quick Links</h4>
+          <a href="home.html">Home</a>
+          <a href="job-portal.html">Find Jobs</a>
+          <a href="industry-map.html">Industry Map</a>
+          <a href="b2btrade.html">B2B Trade</a>
+      </div>
+      <div class="footer-section">
+          <h4>Support</h4>
+          <a href="#">Help Center</a>
+          <a href="#">Contact Us</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+      </div>
   </div>
 </footer>
 

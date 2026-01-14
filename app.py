@@ -22,7 +22,12 @@ from models import Worker, TradeRequest , WorkExperience, Certification, Educati
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+
+    jobs = JobPost.query.order_by(
+        JobPost.created_at.desc()
+    ).limit(6).all()
+    
+    return render_template("home.html", jobs=jobs)
 
 @app.route("/industry-map")
 def industrymap():
@@ -282,14 +287,44 @@ def trade():
     page = request.args.get("page", 1, type=int)
     per_page = 9
 
-    pagination = sellitem.query.order_by(
-        sellitem.created_at.desc()
-    ).paginate(
+    
+    
+    date = request.args.get("date")
+    qty = request.args.get("qty")
+    price = request.args.get("price")
+
+    query = sellitem.query
+
+    # Quantity filter
+    if qty == "050":
+        query = query.filter(sellitem.sell_quantity < 50)
+    elif qty == "50100":
+        query = query.filter(sellitem.sell_quantity >= 50)
+    elif qty == "100":
+        query = query.filter(sellitem.sell_quantity >= 100)
+
+    # Date sort
+    if date == "NF":
+        query = query.order_by(sellitem.created_at.desc())
+    elif date == "OF":
+        query = query.order_by(sellitem.created_at.asc())
+
+    # Price sort
+    if price == "l2h":
+        query = query.order_by(sellitem.sell_price.asc())
+    elif price == "h2l":
+        query = query.order_by(sellitem.sell_price.desc())
+
+    pagination = query.paginate(
         page=page,
         per_page=per_page,
         error_out=False
     )
-
+    for item in pagination.items:
+        if item.sell_image:
+            item.images = json.loads(item.sell_image)
+        else:
+            item.images = [] 
     return render_template(
         "trade.html",
         sell_items=pagination.items,

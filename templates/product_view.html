@@ -104,15 +104,41 @@
           </div>
 
           <!-- IMAGE (RIGHT) -->
-          <div class="job-image">
-            <div class="job-carousel">
-              <button class="carousel-btn left" onclick="prevImg()">‹</button>
-              <img id="jobImg"
-              src="{{ url_for('static', filename='uploads/sell_items/' ~ images[0]) }}"
-              alt="Product Image">
-              <button class="carousel-btn right" onclick="nextImg()">›</button>
-            </div>
+          <div class="job-image" onclick="event.stopPropagation()">
+
+            {% if images and images|length > 0 %}
+          
+              <!-- IMAGE CAROUSEL -->
+              <div class="job-carousel"
+                   data-images='{{ images | tojson }}'
+                   data-index="0">
+          
+                <button class="carousel-btn left"
+                        onclick="event.stopPropagation(); prevImg(this)">‹</button>
+          
+                <img class="job-img"
+                     src="{{ url_for('static', filename='uploads/sell_items/' ~ images[0]) }}"
+                     alt="Product Image"
+                     onclick="event.stopPropagation()">
+          
+                {% if images|length > 1 %}
+                <button class="carousel-btn right"
+                        onclick="event.stopPropagation(); nextImg(this)">›</button>
+                {% endif %}
+          
+              </div>
+          
+            {% else %}
+          
+              <!-- FALLBACK ICON -->
+              <div class="product-image">
+                <i class="fa-solid fa-box"></i>
+              </div>
+          
+            {% endif %}
+          
           </div>
+          
 
         </div>
       </div>
@@ -204,6 +230,29 @@
     </form>
 </div>
   </div>
+
+  <footer>
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>IndusTech</h4>
+            <p>Connecting India's industrial workforce with opportunities.</p>
+        </div>
+        <div class="footer-section">
+            <h4>Quick Links</h4>
+            <a href="home.html">Home</a>
+            <a href="job-portal.html">Find Jobs</a>
+            <a href="industry-map.html">Industry Map</a>
+            <a href="b2btrade.html">B2B Trade</a>
+        </div>
+        <div class="footer-section">
+            <h4>Support</h4>
+            <a href="#">Help Center</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+        </div>
+    </div>
+</footer>
 <script>
   const images = [
     {% for img in images %}
@@ -213,17 +262,32 @@
 
   let currentIndex = 0;
 
-  function nextImg() {
-    currentIndex = (currentIndex + 1) % images.length;
-    document.getElementById("jobImg").src = images[currentIndex];
-  }
-
-  function prevImg() {
-    currentIndex = (currentIndex - 1 + images.length) % images.length;
-    document.getElementById("jobImg").src = images[currentIndex];
-  }
 </script>
+<script>
+function nextImg(btn) {
+  const carousel = btn.closest('.job-carousel');
+  const images = JSON.parse(carousel.dataset.images);
+  let index = parseInt(carousel.dataset.index);
 
+  index = (index + 1) % images.length;
+  carousel.dataset.index = index;
+
+  carousel.querySelector('.job-img').src =
+    `/static/uploads/sell_items/${images[index]}`;
+}
+
+function prevImg(btn) {
+  const carousel = btn.closest('.job-carousel');
+  const images = JSON.parse(carousel.dataset.images);
+  let index = parseInt(carousel.dataset.index);
+
+  index = (index - 1 + images.length) % images.length;
+  carousel.dataset.index = index;
+
+  carousel.querySelector('.job-img').src =
+    `/static/uploads/sell_items/${images[index]}`;
+}
+</script>
 <script>
   function showApplyForm() {
     document.getElementById("applySummary").style.display = "none";

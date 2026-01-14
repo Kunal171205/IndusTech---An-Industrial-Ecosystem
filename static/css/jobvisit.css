@@ -696,20 +696,64 @@
   
   
   /* ===== FOOTER ===== */
-  .footer {
-    background: linear-gradient(90deg, #0f3d91, #0a2c64);
-    color: white;
-    padding: 40px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-top: 40px;
-  }
   
-  .footer a {
-    color: #dbeafe;
-    display: block;
-    margin-top: 6px;
-    text-decoration: none;
-  }
-  
+  :root {
+    --primary-blue: #0a438b;
+    --dark-blue: #101d2d;
+    --orange: #ff8c1a;
+    --light-bg: #f8fafc;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --white: #ffffff;
+    --border-color: #e2e8f0;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+}
+
+/* --- Footer --- */
+footer {
+  background: var(--dark-blue);
+  color: white;
+  margin-top: 4rem;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 5% 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.footer-section h4 {
+  color: var(--orange);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.footer-section p {
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.footer-section a {
+  display: block;
+  color: #cbd5e1;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.footer-section a:hover {
+  color: var(--orange);
+}
+
+.footer-bottom {
+  border-top: 1px solid #334155;
+  padding: 1.5rem 5%;
+  text-align: center;
+  color: #94a3b8;
+}
