@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IndusTech | Industrial Map</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link rel="stylesheet" href="{{ url_for('static' , filename = 'css/industrymap.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -102,9 +104,32 @@
         </aside>
 
         <section class="map-view">
-            <div id="map"></div>
+            <!-- View Switcher Toolbar -->
+            <div class="view-mode-toolbar">
+                <button id="view-mode-map" class="view-btn active">
+                    <i class="fa-solid fa-map-location-dot"></i> 🗺️ Map View
+                </button>
+                <button id="view-mode-graph" class="view-btn">
+                    <i class="fa-solid fa-diagram-project"></i> 🕸️ Knowledge Graph View
+                </button>
+            </div>
 
+            <!-- Map View Container -->
+            <div id="map"></div>
             <button class="gps-btn"><i class="fa-solid fa-location-arrow"></i></button>
+
+            <!-- Knowledge Graph View Container -->
+            <div id="knowledge-graph-container" style="display: none;">
+                <div id="kg-canvas" style="width: 100%; height: 100%;"></div>
+                <div class="kg-legend">
+                    <strong>Knowledge Graph Legend</strong>
+                    <div class="kg-legend-item"><span class="kg-dot comp"></span> Company</div>
+                    <div class="kg-legend-item"><span class="kg-dot sec"></span> Sector</div>
+                    <div class="kg-legend-item"><span class="kg-dot prod"></span> Product</div>
+                    <div class="kg-legend-item"><span class="kg-dot loc"></span> Location</div>
+                    <div class="kg-legend-item"><span class="kg-dot skill"></span> Skill</div>
+                </div>
+            </div>
         </section>
     </main>
 <!-- 
@@ -159,22 +184,13 @@
         });
     </script> -->
  
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Vis-Network Knowledge Graph Library -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script>
         const HOME_SEARCH_QUERY = "{{ search_query }}";
     </script>
-      
-      
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-
-<script>
-    window.addEventListener('load', function () {
-    const script = document.createElement('script');
-    script.src =
-      'https://maps.googleapis.com/maps/api/js?key=AIzaSyAY3_ORuFPOhyOhMs2oFLGq9XzOJmxMGY4&callback=initMap&libraries=places,geometry,directions';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-});
-</script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
