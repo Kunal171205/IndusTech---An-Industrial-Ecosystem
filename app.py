@@ -1,3 +1,7 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 import email
 from enum import unique
 from flask import Flask, render_template, request, redirect, session, url_for , jsonify
@@ -25,6 +29,12 @@ app.config.from_object(config)
 db.init_app(app)
 
 from models import Worker, TradeRequest , WorkExperience, Certification, Education ,Company, JobPost, sellitem, Application  # import AFTER db.init_app
+
+from routes.main_routes import main_bp
+from routes.ai_routes import ai_bp
+
+app.register_blueprint(main_bp)
+app.register_blueprint(ai_bp)
 
 oauth = OAuth(app)
 
@@ -975,6 +985,12 @@ def create_or_edit_job():
         db.session.add(job)
 
     db.session.commit()
+    try:
+        from tasks import sync_job_embedding
+        c_name = job.company.company_name if (job and job.company) else "Company"
+        sync_job_embedding(job.job_id, job.job_title, job.description, job.city, job.salary, c_name)
+    except Exception as e:
+        print(f"Async Job Indexing error: {e}")
     return redirect(url_for("companyprofile"))
 @app.route("/trade/apply", methods=["POST"])
 def apply_trade():
@@ -1157,8 +1173,14 @@ def add_selling_item():
 
             db.session.add(sell_item)
         db.session.commit()
+        try:
+            from tasks import sync_product_embedding
+            target_item = sell if 'sell' in locals() and sell else sell_item
+            c_name = target_item.company.company_name if (target_item and target_item.company) else "Supplier"
+            sync_product_embedding(target_item.sell_id, target_item.sell_name, target_item.sell_description, target_item.sell_category, target_item.sell_price, c_name)
+        except Exception as e:
+            print(f"Async Product Indexing error: {e}")
 
-    
     return redirect(url_for("companyprofile"))
     
 
