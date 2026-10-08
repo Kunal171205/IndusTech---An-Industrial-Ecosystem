@@ -1,0 +1,14 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+Authlib
+requests
+Werkzeug
+python-dotenv
+sentence-transformers
+faiss-cpu
+neo4j
+google-genai
+apscheduler
+numpy
+pandas

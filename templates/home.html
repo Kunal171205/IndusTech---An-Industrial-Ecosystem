@@ -33,19 +33,19 @@
   <div class="auth">
     {% if session.get('user_type') == 'worker' %}
       <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
-    <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    <a href="{{ url_for('auth_bp.logout') }}" class="signup">Logout</a>
     {% elif session.get('user_type') == 'company' %}
     <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
-    <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+    <a href="{{ url_for('auth_bp.logout') }}" class="signup">Logout</a>
     {% else %}
-    <a href="{{ url_for('login') }}" class="signup">Login</a>
+    <a href="{{ url_for('auth_bp.login') }}" class="signup">Login</a>
     {% endif %}
   </div>
 </header>
 
 <!-- ================= HERO ================= -->
 <section class="hero">
-    <div class="badge">🌐 Industrial Ecosystem Platform</div>
+    <div class="badge"><i class="fa-solid fa-globe"></i> Industrial Ecosystem Platform</div>
 
   <h1>
     Discover Industries.
@@ -240,7 +240,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.5 <small>(45)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.5 <small>(45)</small>
             </span>
           </div>
   
@@ -265,7 +265,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.2 <small>(32)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.2 <small>(32)</small>
             </span>
           </div>
   
@@ -290,7 +290,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.7 <small>(58)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.7 <small>(58)</small>
             </span>
           </div>
   
@@ -315,7 +315,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.0 <small>(28)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.0 <small>(28)</small>
             </span>
           </div>
   
@@ -340,7 +340,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.3 <small>(22)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.3 <small>(22)</small>
             </span>
           </div>
   
@@ -365,7 +365,7 @@
             </span>
   
             <span class="rating">
-              ⭐ 4.6 <small>(67)</small>
+              <i class="fa-solid fa-star" style="color: #FFD43B;"></i> 4.6 <small>(67)</small>
             </span>
           </div>
   
@@ -384,7 +384,7 @@
     <p>Join thousands of workers, companies, and businesses already using IndusTech.</p>
     <div class="cta-buttons">
       <button onclick="window.location.href='{{ url_for('signup') }}'" class="cta-btn primary">Register as Company </button>
-      <button onclick="window.location.href='{{ url_for('login') }}'" class="cta-btn secondary">Company Login</button>
+      <button onclick="window.location.href='{{ url_for('auth_bp.login') }}'" class="cta-btn secondary">Company Login</button>
     </div>  
   </section>
   
@@ -398,17 +398,17 @@
       </div>
       <div class="footer-section">
           <h4>Quick Links</h4>
-          <a href="home.html">Home</a>
-          <a href="job-portal.html">Find Jobs</a>
-          <a href="industry-map.html">Industry Map</a>
-          <a href="b2btrade.html">B2B Trade</a>
+          <a href="{{ url_for('home') }}">Home</a>
+          <a href="{{ url_for('jobportal') }}">Find Jobs</a>
+          <a href="{{ url_for('industrymap') }}">Industry Map</a>
+          <a href="{{ url_for('trade') }}">B2B Trade</a>
       </div>
       <div class="footer-section">
           <h4>Support</h4>
-          <a href="#">Help Center</a>
-          <a href="#">Contact Us</a>
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
+          <a href="{{ url_for('support') }}">Help Center</a>
+          <a href="{{ url_for('support') }}">Contact Us</a>
+          <a href="{{ url_for('support') }}">Privacy Policy</a>
+          <a href="{{ url_for('support') }}">Terms of Service</a>
       </div>
   </div>
 </footer>

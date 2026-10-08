@@ -27,8 +27,8 @@
     </nav>
   
     <div class="auth">
-      <!-- <a href ="{{url_for('login')}}" class="login">Login</a> -->
-      <a href ="{{url_for('login')}}" class="signup">Login/Sign Up</a>
+      <!-- <a href ="{{url_for('auth_bp.login')}}" class="login">Login</a> -->
+      <a href ="{{url_for('auth_bp.login')}}" class="signup">Login/Sign Up</a>
     </div>
 </header>
 
@@ -94,7 +94,7 @@
                 </div>
 
                  
-                <a href="{{ url_for('login_google', role='worker') }}" class="btn-google">
+                <a href="{{ url_for('auth_bp.login_google', role='worker') }}" class="btn-google">
                     <i class="fab fa-google"></i>
                     Continue with Google
                  </a>
@@ -136,7 +136,7 @@
                 </div>
 
                  
-                <a href="{{ url_for('login_google', role='company') }}" class="btn-google">
+                <a href="{{ url_for('auth_bp.login_google', role='company') }}" class="btn-google">
                     <i class="fab fa-google"></i>
                     Continue with Google
                  </a>

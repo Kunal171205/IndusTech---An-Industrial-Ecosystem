@@ -35,6 +35,23 @@ class Worker(db.Model):
     kyc_status = db.Column(db.String(20), default="pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # plain-language profile and embedding
+    profile_text = db.Column(db.Text, nullable=True)
+    preferred_zone = db.Column(db.String(80), nullable=True)
+    preferred_industry = db.Column(db.String(120), nullable=True)
+    embedding = db.Column(db.LargeBinary, nullable=True)
+    
+    def set_embedding(self, vec):
+        import numpy as np
+        if vec is not None:
+            self.embedding = np.array(vec, dtype=np.float32).flatten().tobytes()
+
+    def get_embedding(self):
+        import numpy as np
+        if self.embedding is None:
+            return None
+        return np.frombuffer(self.embedding, dtype=np.float32)
+
 
 class WorkExperience(db.Model):
     __tablename__ = "work_experience"

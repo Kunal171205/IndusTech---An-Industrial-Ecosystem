@@ -12,19 +12,25 @@ from flask import Flask
 from database import db
 import config
 import json
+import random
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from authlib.integrations.flask_client import OAuth
 
-
 import secrets
-
 
 from flask import flash
 app = Flask(__name__)
+from routes.auth_routes import auth_bp
+app.register_blueprint(auth_bp)
+
 app.config.from_object(config)
 db.init_app(app)
 
 from models import Worker, TradeRequest , WorkExperience, Certification, Education ,Company, JobPost, sellitem, Application  # import AFTER db.init_app
+from indusconnect.models_ic import AdzunaJob
 
 oauth = OAuth(app)
 
@@ -43,105 +49,197 @@ google = oauth.register(
 
 
 
-@app.route('/login/google')
-def login_google():
-    role = request.args.get("role")   # worker or company
-    session["oauth_role"] = role
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
+# ================================================================
+
+# RAG + KNOWLEDGE GRAPH + REACT AGENT IMPORTS
+
+# IndusTech journal paper upgrade
+
+# ================================================================
+
+try:
+    from neo4j import GraphDatabase
+except ImportError:
+    print("[IndusTech] WARNING: Neo4j libraries not installed.")
+# ================================================================
+
+# RAG + KG STARTUP INITIALIZATION
+
+# All components load once. If any fails, server still starts.
+
+# ================================================================
 
 
-@app.route('/login/google/callback')
-def google_callback():
-    token = google.authorize_access_token()
-    user_info = google.get("userinfo").json()
 
-    email = user_info.get("email")
-    name = user_info.get("name")
-    google_id = user_info.get("id")
+# --- Neo4j Knowledge Graph ---
+_neo4j_driver = None
+try:
+    _neo4j_driver = GraphDatabase.driver(
+        os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+        auth=("neo4j", os.getenv("NEO4J_PASSWORD", "password"))
+    )
+    _neo4j_driver.verify_connectivity()
+    print("[IndusTech] Neo4j connected successfully")
+except Exception as e:
+    _neo4j_driver = None
+    print(f"[IndusTech] WARNING: Neo4j unavailable: {e}")
 
-    role = session.get("oauth_role")   # worker / company
-    temp_password = secrets.token_urlsafe(16)
+# Build new job FAISS index
+from indusconnect.retrieval import build_faiss_index
+with app.app_context():
+    # Only try to build if tables exist
+    try:
+        build_faiss_index()
+    except Exception as e:
+        print(f"Skipping index build (db might not be ready): {e}")
 
-    if role == "company":
-        user = Company.query.filter_by(email=email).first()
-        if not user:
-            user = Company(
-                company_name=name,
-                email=email,
-                google_id=google_id,
-                password=temp_password,
-                is_password_set=False
-            )
-            db.session.add(user)
-            db.session.commit()
+print("[IndusTech] Startup initialization complete.")
 
-        session.clear()
-        session["company_id"] = user.id
-        session["user_type"] = "company"
 
-        if not user.is_password_set:
-            return redirect(url_for("set_company_password"))
 
-        return redirect(url_for("companyprofile"))
+# Start ingestion scheduler
+from indusconnect.scheduler import start_scheduler
+start_scheduler(app, _neo4j_driver)
 
-    # -------- WORKER --------
-    user = Worker.query.filter_by(email=email).first()
-    if not user:
-        user = Worker(
-            name=name,
-            email=email,
-            google_id=google_id,
-            password=temp_password,
-            is_password_set=False
+
+
+
+# ================================================================
+# NEW ROUTE: /api/rag-filter
+# Semantic filter search for map sidebar filter buttons
+# ================================================================
+@app.route('/api/rag-filter')
+def api_rag_filter():
+    rag_query = request.args.get('q', '').strip()
+    if not rag_query:
+        return jsonify([])
+
+    try:
+        user_lat = float(request.args.get('lat'))
+        user_lng = float(request.args.get('lng'))
+        radius_km = float(request.args.get('radius', 50000)) / 1000
+        filter_by_location = True
+    except (TypeError, ValueError):
+        filter_by_location = False
+
+    from indusconnect.retrieval import search_jobs
+    results, _ = search_jobs(rag_query, _neo4j_driver, top_k=30, threshold=0.1)
+
+    output = []
+    for job in results:
+        lat, lng = job.get('latitude'), job.get('longitude')
+        if filter_by_location and lat and lng:
+            if haversine_km(user_lat, user_lng, float(lat), float(lng)) > radius_km:
+                continue
+
+        output.append({
+            "id":           f"rag_{hash(job['source_job_id'])}",
+            "title":        job.get('title', 'Unknown'),
+            "company":      job.get('company_name', ''),
+            "city":         job.get('midc_zone', 'Pune') + " MIDC",
+            "type":         job.get('industry', ''),
+            "lat":          lat,
+            "lng":          lng,
+            "rating":       None,
+            "website":      job.get('redirect_url', ''),
+            "phone":        "",
+            "similarity":   round(job.get('similarity_score', 0) * 100, 1),
+            "match_type":   "ai_match",
+            "source":       "rag",
+            "location_confidence": "semantic"
+        })
+
+    output.sort(key=lambda x: x['similarity'], reverse=True)
+    return jsonify(output[:15])
+
+# ================================================================
+# NEW ROUTE: /api/chat
+# RAG Chatbot endpoint (Gemini grounded on FAISS retrieval)
+# ================================================================
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    data     = request.get_json()
+    question = data.get('message', '').strip()
+    history  = data.get('history', [])
+
+    if not question:
+        return jsonify({'answer': 'Please ask a question.', 'sources': [], 'steps': []})
+
+    from indusconnect.retrieval import search_jobs
+    results, detected_zone = search_jobs(question, _neo4j_driver, top_k=5)
+
+    faiss_context = ""
+    sources = []
+    for job in results:
+        faiss_context += f"- Title: {job['title']} | Company: {job['company_name']} | Zone: {job['midc_zone']} | Desc: {job['description'][:200]}\n"
+        sources.append(job['company_name'])
+
+    history_str = "".join(
+        f"User: {t['user']}\nAssistant: {t['assistant']}\n"
+        for t in history[-4:]
+    )
+
+    zone_str = f"(Detected zone: {detected_zone})\n" if detected_zone else ""
+
+    prompt = (
+        f"You are IndusTech AI for Pune MIDC. Answer using only this context.\n\n"
+        f"Context:\n{zone_str}{faiss_context}\n\n{history_str}User: {question}\nAssistant:"
+    )
+
+    try:
+        from google import genai as google_genai
+        client = google_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
         )
-        db.session.add(user)
-        db.session.commit()
+        answer = response.text.strip()
+    except Exception as e:
+        answer = f"AI service unavailable: {e}"
 
-    session.clear()
-    session["worker_id"] = user.id
-    session["user_type"] = "worker"
+    return jsonify({'answer': answer, 'sources': sources, 'steps': [], 'mode': 'rag'})
 
-    if not user.is_password_set:
-        return redirect(url_for("set_password"))
+# ================================================================
+# NEW ROUTE: /api/agent-tools
+# Returns list of available tools (for frontend display)
+# ================================================================
+@app.route('/api/agent-tools')
+def api_agent_tools():
+    # Deprecated UI route, return empty or static tools
+    tools = [
+        {"name": "SemanticJobSearch", "description": "Find jobs by meaning"},
+        {"name": "ZoneProfile",           "description": "Profile of a MIDC zone"},
+    ]
+    return jsonify({
+        "agent_available": False,
+        "tools": tools
+    })
 
-    return redirect(url_for("workerprofile"))
 
-@app.route("/set-password", methods=["GET","POST"])
-def set_password():
-    if request.method == "POST":
-        pwd = request.form["password"]
-        
-        user = Worker.query.get(session["worker_id"])
-        user.password = pwd
-        user.is_password_set = True
-        db.session.commit()
-        return redirect(url_for("workerprofile"))
-    return render_template("set_password.html")
 
-@app.route("/set-company-password", methods=["GET","POST"])
-def set_company_password():
-    if "company_id" not in session:
-        return redirect(url_for("login"))
 
-    if request.method == "POST":
-        pwd = request.form["password"]
-        company = Company.query.get(session["company_id"])
-        company.password = pwd
-        company.is_password_set = True
-        db.session.commit()
-        return redirect(url_for("companyprofile"))
 
-    return render_template("set_password.html")  # same UI can be reused
 
 @app.route("/")
 def home():
-
-    jobs = JobPost.query.order_by(
+    jobs = JobPost.query.filter_by(status="Active").order_by(
         JobPost.created_at.desc()
     ).limit(6).all()
     
-    return render_template("home.html", jobs=jobs)
+    total_industries = Company.query.count()
+    total_workers = Worker.query.count()
+    total_products = sellitem.query.count()
+    total_companies = Company.query.count()
+    
+    companies = Company.query.limit(6).all()
+    
+    return render_template("home.html", 
+                           jobs=jobs,
+                           total_industries=total_industries,
+                           total_workers=total_workers,
+                           total_products=total_products,
+                           total_companies=total_companies,
+                           companies=companies)
 
 @app.route("/industry-map")
 def industrymap():
@@ -151,6 +249,451 @@ def industrymap():
 @app.route('/product_view')
 def productview():
     return render_template('product_view.html')
+
+@app.route("/support")
+def support():
+    return render_template("support.html")
+
+import requests
+from math import radians, sin, cos, sqrt, atan2
+
+def haversine_km(lat1, lng1, lat2, lng2):
+    """Calculate distance in km between two lat/lng points."""
+    R = 6371
+    dlat = radians(lat2 - lat1)
+    dlng = radians(lng2 - lng1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlng/2)**2
+    return R * 2 * atan2(sqrt(a), sqrt(1-a))
+
+# City coordinate lookup for Haversine fallback when no lat/lng stored
+CITY_COORDS = {
+    "pune": (18.5204, 73.8567), "mumbai": (19.0760, 72.8777),
+    "nashik": (20.0110, 73.7909), "aurangabad": (19.8762, 75.3433),
+    "nagpur": (21.1458, 79.0882), "chakan": (18.7500, 73.8500),
+    "satara": (17.6805, 73.9966), "delhi": (28.7041, 77.1025),
+    "bangalore": (12.9716, 77.5946), "hyderabad": (17.3850, 78.4867),
+    "chennai": (13.0827, 80.2707), "kolkata": (22.5726, 88.3639),
+    "ahmedabad": (23.0225, 72.5714), "udgir": (18.3939, 77.1186),
+    "latur": (18.3956, 76.5603), "solapur": (17.6868, 75.9064),
+    "amravati": (20.9374, 77.7796), "nanded": (19.1383, 77.3210),
+}
+
+def get_city_coords(city_str):
+    """Return (lat, lng) tuple for a city string, or None if unknown."""
+    if not city_str:
+        return None
+    lower = city_str.lower().strip()
+    if lower in CITY_COORDS:
+        return CITY_COORDS[lower]
+    for key, coords in CITY_COORDS.items():
+        if key in lower:
+            return coords
+    return None
+
+@app.route("/api/map/jobs")
+def api_map_jobs():
+    # Parse location params
+    try:
+        user_lat = float(request.args.get("lat"))
+        user_lng = float(request.args.get("lng"))
+        radius_km = float(request.args.get("radius", 10000)) / 1000
+        filter_by_location = True
+    except (TypeError, ValueError):
+        filter_by_location = False
+
+    keyword = request.args.get("q", "").strip().lower()
+
+    jobs = JobPost.query.filter_by(status="Active").all()
+    job_list = []
+    
+    # Pre-process keyword for text matching
+    search_words = keyword.split() if keyword else []
+
+    for job in jobs:
+        # Standard text filtering on local DB
+        if search_words:
+            job_text = f"{job.job_title} {job.company.company_name} {job.city} {job.description}".lower()
+            if not all(word in job_text for word in search_words):
+                continue
+
+        coords = get_city_coords(job.city)
+        if coords:
+            lat = round(coords[0] + random.uniform(-0.020, 0.020), 6)
+            lng = round(coords[1] + random.uniform(-0.020, 0.020), 6)
+            location_confidence = "exact"
+        else:
+            # Use smart MIDC zone assignment instead of piling all on user location
+            lat, lng, location_confidence = resolve_job_location(
+                job.job_title or "",
+                job.description or "",
+                job.city or "",
+                company_name=getattr(job, "company_name", "") or ""
+            )
+        
+        if filter_by_location:
+            dist = haversine_km(user_lat, user_lng, lat, lng)
+            if dist > radius_km:
+                continue
+
+        job_list.append({
+            "id": job.job_id,
+            "title": job.job_title,
+            "company": job.company.company_name,
+            "city": job.city,
+            "location": job.specific_location,
+            "salary": job.salary,
+            "type": job.job_type,
+            "shift": job.shift,
+            "description": job.description,
+            "source": "local",
+            "lat": lat,
+            "lng": lng,
+            "location_confidence": location_confidence,
+        })
+
+    return jsonify(job_list)
+
+
+# ── All Pune industrial zones with coordinates ───────────────────────────────
+# Includes MIDC zones + major IT/industrial hubs in Pune district
+PUNE_ALL_ZONES = {
+    # Core MIDC zones
+    "chakan":       (18.7580, 73.8600),
+    "bhosari":      (18.6400, 73.8500),
+    "ranjangaon":   (18.7220, 74.1580),
+    "hinjewadi":    (18.5910, 73.7380),
+    "pirangut":     (18.5100, 73.6900),
+    "talawade":     (18.6560, 73.7980),
+    "shirwal":      (18.1560, 74.0700),
+    "pimpri":       (18.6280, 73.8000),
+    "hadapsar":     (18.5020, 73.9360),
+    "sanaswadi":    (18.6800, 74.0600),
+    # Extended Pune industrial / IT areas
+    "magarpatta":   (18.5089, 73.9260),
+    "kharadi":      (18.5512, 73.9442),
+    "viman nagar":  (18.5679, 73.9143),
+    "baner":        (18.5590, 73.7868),
+    "wakad":        (18.5985, 73.7610),
+    "aundh":        (18.5581, 73.8072),
+    "kothrud":      (18.5074, 73.8079),
+    "yerawada":     (18.5594, 73.8977),
+    "wagholi":      (18.5800, 73.9800),
+    "kondhwa":      (18.4627, 73.8797),
+    "undri":        (18.4546, 73.9028),
+    "talegaon":     (18.7300, 73.6700),
+    "khed":         (18.8500, 73.9100),
+    "chinchwad":    (18.6440, 73.8015),
+}
+
+# MIDC-specific zone subset (for final marker placement)
+PUNE_MIDC_ZONES_COORDS = {k: v for k, v in PUNE_ALL_ZONES.items() if k in {
+    "chakan","bhosari","ranjangaon","hinjewadi","pirangut",
+    "talawade","shirwal","pimpri","hadapsar","sanaswadi",
+}}
+
+# ── Company → zone lookup (direct match, highest priority) ───────────────────
+# Major companies known to operate in specific Pune zones
+COMPANY_TO_ZONE = {
+    # Hinjewadi IT companies
+    "mastercard":    "hinjewadi", "infosys":       "hinjewadi",
+    "wipro":         "hinjewadi", "tech mahindra": "hinjewadi",
+    "cognizant":     "hinjewadi", "persistent":    "hinjewadi",
+    "tata consultancy": "hinjewadi", "tcs":         "hinjewadi",
+    "accenture":     "hinjewadi", "capgemini":     "hinjewadi",
+    "oracle":        "hinjewadi", "ibm":           "hinjewadi",
+    "zensar":        "hinjewadi", "tieto":         "hinjewadi",
+    "kpit":          "hinjewadi",
+    # Magarpatta / Kharadi IT
+    "barclays":      "kharadi",   "mercedes":      "kharadi",
+    "credit suisse": "kharadi",   "deutsche":      "kharadi",
+    "hsbc":          "kharadi",
+    # Chakan Manufacturing
+    "bajaj auto":    "chakan",    "volkswagen":    "ranjangaon",
+    "general motors":"talegaon",  "fiat":          "ranjangaon",
+    "mercedes benz": "chakan",    "mahindra":      "chakan",
+    "tata motors":   "pimpri",    "force motors":  "bhosari",
+    "bharat forge":  "bhosari",   "kalyani":       "bhosari",
+    "cummins":       "pimpri",    "thermax":       "pimpri",
+    "atlas copco":   "hadapsar",  "sandvik":       "sanaswadi",
+    "alfa laval":    "pirangut",  "skf":           "ranjangaon",
+    "bosch":         "chakan",    "siemens":       "pimpri",
+    "abb":           "pimpri",    "honeywell":     "hinjewadi",
+    "emerson":       "pimpri",    "parker":        "pimpri",
+    "bridgestone":   "ranjangaon","michelin":      "ranjangaon",
+    "endurance":     "chakan",    "faurecia":      "chakan",
+    "tata consulting": "ranjangaon",
+    # Chemical
+    "deepak nitrite":"pirangut",  "aarti":         "pirangut",
+    "basf":          "shirwal",   "sudarshan":     "shirwal",
+    # Logistics
+    "dhl":           "hadapsar",  "maersk":        "hadapsar",
+    "blue dart":     "hadapsar",  "fedex":         "hadapsar",
+    "schenker":      "hadapsar",
+}
+
+# ── Keyword → zone (used when company not matched) ───────────────────────────
+KEYWORD_TO_ZONE = {
+    # IT / Tech (broad) → Hinjewadi
+    "software engineer":     "hinjewadi", "senior software":      "hinjewadi",
+    "software developer":    "hinjewadi", "python":               "hinjewadi",
+    "java":                  "hinjewadi", "react":                "hinjewadi",
+    "angular":               "hinjewadi", "node.js":              "hinjewadi",
+    "data scientist":        "hinjewadi", "machine learning":     "hinjewadi",
+    "artificial intelligence":"hinjewadi","cloud engineer":       "hinjewadi",
+    "devops":                "hinjewadi", "site reliability":     "hinjewadi",
+    "full stack":            "hinjewadi", "frontend":             "hinjewadi",
+    "backend engineer":      "hinjewadi", "mobile developer":     "hinjewadi",
+    "ios developer":         "hinjewadi", "android developer":    "hinjewadi",
+    "test engineer":         "hinjewadi", "qa engineer":          "hinjewadi",
+    "automation testing":    "hinjewadi", "selenium":             "hinjewadi",
+    "cybersecurity":         "talawade",  "network engineer":     "talawade",
+    "sap consultant":        "talawade",  "erp":                  "talawade",
+    "database":              "talawade",  "dba":                  "talawade",
+    # Finance / Banking / BFSI → Kharadi / Hinjewadi
+    "financial analyst":     "kharadi",   "finance":              "kharadi",
+    "investment":            "kharadi",   "banking":              "kharadi",
+    "risk analyst":          "kharadi",   "compliance":           "kharadi",
+    "credit analyst":        "kharadi",   "treasury":             "kharadi",
+    "audit":                 "kharadi",   "chartered accountant": "kharadi",
+    # Construction / Projects → Ranjangaon / Pimpri
+    "construction manager":  "ranjangaon","site supervisor":      "ranjangaon",
+    "construction":          "ranjangaon","site engineer":        "ranjangaon",
+    "civil engineer":        "ranjangaon","structural engineer":  "ranjangaon",
+    "project engineer":      "pimpri",    "project manager":      "pimpri",
+    "commissioning":         "ranjangaon","erection":             "ranjangaon",
+    "industrial supervision":"ranjangaon","site management":      "ranjangaon",
+    "turnaround":            "ranjangaon","shutdown":             "ranjangaon",
+    # Manufacturing → Chakan / Bhosari
+    "production supervisor": "chakan",    "production manager":   "chakan",
+    "manufacturing":         "chakan",    "plant supervisor":     "chakan",
+    "cnc":                   "bhosari",   "vmc":                  "bhosari",
+    "machinist":             "bhosari",   "tool & die":           "bhosari",
+    "stamping":              "chakan",    "press shop":           "chakan",
+    "assembly operator":     "chakan",    "fabrication":          "bhosari",
+    "casting":               "chakan",    "forging":              "bhosari",
+    "sheet metal":           "bhosari",   "die casting":          "bhosari",
+    "plant manager":         "chakan",    "plant head":           "chakan",
+    "general manager":       "chakan",    "operations manager":   "chakan",
+    "production incharge":   "chakan",    "shift supervisor":     "chakan",
+    # Welding → Sanaswadi
+    "welding supervisor":    "sanaswadi", "welder":               "sanaswadi",
+    "weld inspector":        "sanaswadi", "welding engineer":     "sanaswadi",
+    # Mechanical / Electrical Engineering → Pimpri
+    "mechanical engineer":   "pimpri",    "electrical engineer":  "pimpri",
+    "design engineer":       "pimpri",    "autocad":              "pimpri",
+    "solidworks":            "pimpri",    "catia":                "ranjangaon",
+    "plc programmer":        "pimpri",    "scada":                "pimpri",
+    "automation engineer":   "pimpri",    "instrumentation":      "ranjangaon",
+    "hvac":                  "pimpri",    "maintenance engineer":  "ranjangaon",
+    "preventive maintenance":"ranjangaon","sales engineer":       "pimpri",
+    "industrial automation": "pimpri",
+    # Safety / EHS → Shirwal
+    "safety officer":        "shirwal",   "hse manager":          "shirwal",
+    "ehs officer":           "shirwal",   "fire safety":          "shirwal",
+    "environment health":    "shirwal",   "health safety":        "shirwal",
+    # Chemical → Pirangut / Shirwal
+    "chemical engineer":     "pirangut",  "process engineer":     "pirangut",
+    "chemist":               "pirangut",  "pharma":               "shirwal",
+    "laboratory analyst":    "pirangut",  "gmp":                  "shirwal",
+    "reactor":               "pirangut",  "distillation":         "pirangut",
+    # Logistics / Warehouse → Hadapsar
+    "logistics manager":     "hadapsar",  "warehouse manager":    "hadapsar",
+    "supply chain":          "hadapsar",  "dispatch":             "hadapsar",
+    "inventory":             "hadapsar",  "store keeper":         "hadapsar",
+    "forklift":              "hadapsar",  "freight":              "hadapsar",
+    # Quality → Sanaswadi
+    "quality engineer":      "sanaswadi", "quality control":      "sanaswadi",
+    "quality assurance":     "sanaswadi", "qc inspector":         "sanaswadi",
+    "ppap":                  "ranjangaon","apqp":                 "ranjangaon",
+    "iatf":                  "ranjangaon","iso 9001":             "sanaswadi",
+    # Sales → Hadapsar / Pimpri
+    "sales manager":         "hadapsar",  "business development":  "hadapsar",
+    "industrial sales":      "hadapsar",  "b2b sales":            "hadapsar",
+    "account manager":       "hadapsar",  "key account":          "hadapsar",
+    # HR / Admin → Pimpri
+    "hr manager":            "pimpri",    "human resource":       "pimpri",
+    "talent acquisition":    "pimpri",    "payroll":              "pimpri",
+    "recruitment":           "pimpri",    "purchase manager":     "pimpri",
+    "procurement":           "pimpri",    "administration":       "pimpri",
+    # Generic tech roles → spread across IT zones
+    "program manager":       "hinjewadi", "product manager":      "hinjewadi",
+    "scrum master":          "hinjewadi", "agile":                "hinjewadi",
+    "architect":             "hinjewadi", "solution architect":   "hinjewadi",
+    "technical lead":        "hinjewadi", "tech lead":            "hinjewadi",
+    "senior engineer":       "hinjewadi", "principal engineer":   "hinjewadi",
+    "vice president":        "kharadi",   "associate director":   "kharadi",
+    "director":              "kharadi",   "head of":              "hinjewadi",
+}
+
+# ── Industrial corridor spread zones ─────────────────────────────────────────
+# IMPORTANT: All corridors must be > 8km from Pune city centre (18.52, 73.85)
+# so spread never overlaps with city centre and causes clustering there.
+# Verified: min distance from city centre for each corridor ≥ 9km ✓
+PUNE_SPREAD_CORRIDORS = [
+    # (name,            center_lat, center_lng, spread_deg≈km)
+    ("hinjewadi",       18.5910,    73.7380,    0.04),  # 15km west,   ±4km
+    ("chakan",          18.7580,    73.8600,    0.04),  # 26km north,  ±4km
+    ("bhosari",         18.6400,    73.8500,    0.04),  # 13km north,  ±4km
+    ("ranjangaon",      18.7220,    74.1580,    0.04),  # 39km NE,     ±4km
+    ("sanaswadi",       18.6800,    74.0600,    0.04),  # 28km NE,     ±4km
+    ("hadapsar_east",   18.4900,    74.0000,    0.03),  # 15km east,   ±3km
+    ("talegaon",        18.7300,    73.6700,    0.04),  # 31km NW,     ±4km
+    ("khed",            18.8500,    73.9100,    0.04),  # 37km north,  ±4km
+    ("pirangut",        18.5100,    73.6900,    0.03),  # 18km west,   ±3km
+    ("shirwal",         18.1560,    74.0700,    0.04),  # 46km south,  ±4km
+    ("talawade",        18.6560,    73.7980,    0.04),  # 16km north,  ±4km
+    ("wagholi_east",    18.5800,    74.0100,    0.03),  # 17km east,   ±3km
+    ("wakad_west",      18.6100,    73.7200,    0.03),  # 18km west,   ±3km
+    ("alandi",          18.7400,    73.8970,    0.03),  # 25km north,  ±3km
+    ("urse",            18.7000,    73.6700,    0.03),  # 28km NW,     ±3km
+    ("jejuri",          18.2600,    74.1600,    0.03),  # 43km south,  ±3km
+]
+_corridor_rr = 0
+
+def _spread_coords_in_corridor(corridor):
+    """Return random coords within the corridor's spread radius."""
+    _, lat, lng, spread = corridor
+    return (
+        round(lat + random.uniform(-spread, spread), 6),
+        round(lng + random.uniform(-spread, spread), 6),
+    )
+
+def smart_midc_coords(title, description, area_str):
+    """
+    Assign a Pune zone coordinate based on:
+      1. Exact zone/area name in text  (chakan, hinjewadi, magarpatta...)
+      2. Company name lookup           (mastercard → hinjewadi)
+      3. Keyword match in title+desc   (longest match first)
+      4. Round-robin across 16 spread corridors with WIDE jitter
+         — prevents Leaflet from clustering unmatched jobs together
+    Returns (lat, lng).
+    """
+    global _corridor_rr
+    combined = f"{title} {description} {area_str}".lower()
+
+    # 1. Direct area/zone name in text
+    for zone, coords in PUNE_ALL_ZONES.items():
+        if zone in combined:
+            # Use corridor spread for this zone if available
+            corridor = next((c for c in PUNE_SPREAD_CORRIDORS if c[0] == zone), None)
+            if corridor:
+                return _spread_coords_in_corridor(corridor)
+            return (
+                round(coords[0] + random.uniform(-0.030, 0.030), 6),
+                round(coords[1] + random.uniform(-0.030, 0.030), 6),
+            )
+
+    # 2. Company name lookup
+    for company_kw, zone in COMPANY_TO_ZONE.items():
+        if company_kw in combined:
+            corridor = next((c for c in PUNE_SPREAD_CORRIDORS if c[0] == zone), None)
+            if corridor:
+                return _spread_coords_in_corridor(corridor)
+            coords = PUNE_ALL_ZONES.get(zone, (18.5910, 73.7380))
+            return (
+                round(coords[0] + random.uniform(-0.030, 0.030), 6),
+                round(coords[1] + random.uniform(-0.030, 0.030), 6),
+            )
+
+    # 3. Keyword match — longer = more specific → checked first
+    for keyword in sorted(KEYWORD_TO_ZONE.keys(), key=len, reverse=True):
+        if keyword in combined:
+            zone = KEYWORD_TO_ZONE[keyword]
+            corridor = next((c for c in PUNE_SPREAD_CORRIDORS if c[0] == zone), None)
+            if corridor:
+                return _spread_coords_in_corridor(corridor)
+            coords = PUNE_ALL_ZONES.get(zone, (18.5910, 73.7380))
+            return (
+                round(coords[0] + random.uniform(-0.030, 0.030), 6),
+                round(coords[1] + random.uniform(-0.030, 0.030), 6),
+            )
+
+    # 4. Round-robin across 16 spread corridors — WIDE spread prevents clustering
+    corridor = PUNE_SPREAD_CORRIDORS[_corridor_rr % len(PUNE_SPREAD_CORRIDORS)]
+    _corridor_rr += 1
+    return _spread_coords_in_corridor(corridor)
+
+
+# ── Adzuna in-memory cache ────────────────────────────────────────────────────
+# Stores pre-processed jobs so map requests are instant after first load.
+# Cache refreshes automatically every 30 minutes in the background.
+@app.route("/api/map/trades")
+def api_map_trades():
+    try:
+        user_lat = float(request.args.get("lat"))
+        user_lng = float(request.args.get("lng"))
+        radius_km = float(request.args.get("radius", 10000)) / 1000
+        filter_by_location = True
+    except (TypeError, ValueError):
+        filter_by_location = False
+
+    trades = sellitem.query.all()
+    trade_list = []
+    for trade in trades:
+        coords = get_city_coords(trade.company.company_city)
+        if coords:
+            lat, lng = coords
+            location_confidence = "city_center"
+        elif filter_by_location:
+            lat, lng = user_lat, user_lng
+            location_confidence = "fallback_user_location"
+        else:
+            continue
+            
+        lat += random.uniform(-0.015, 0.015)
+        lng += random.uniform(-0.015, 0.015)
+        
+        if filter_by_location:
+            dist = haversine_km(user_lat, user_lng, lat, lng)
+            if dist > radius_km:
+                continue
+
+        trade_list.append({
+            "id": trade.sell_id,
+            "name": trade.sell_name,
+            "company": trade.company.company_name,
+            "city": trade.company.company_city,
+            "location": trade.company.address,
+            "price": trade.sell_price,
+            "category": trade.sell_category,
+            "description": trade.sell_description,
+            "quantity": trade.sell_quantity,
+            "lat": lat,
+            "lng": lng,
+            "location_confidence": location_confidence,
+        })
+    return jsonify(trade_list)
+
+@app.route("/api/map/companies")
+def api_map_companies():
+    try:
+        user_lat = float(request.args.get("lat"))
+        user_lng = float(request.args.get("lng"))
+        radius_km = float(request.args.get("radius", 10000)) / 1000
+        filter_by_location = True
+    except (TypeError, ValueError):
+        filter_by_location = False
+
+    companies = Company.query.all()
+    company_list = []
+    for comp in companies:
+        coords = get_city_coords(comp.company_city)
+        if filter_by_location and coords:
+            dist = haversine_km(user_lat, user_lng, coords[0], coords[1])
+            if dist > radius_km:
+                continue
+        company_list.append({
+            "id": comp.id,
+            "name": comp.company_name,
+            "category": comp.company_category,
+            "city": comp.company_city,
+            "location": comp.address,
+            "lat": coords[0] if coords else None,
+            "lng": coords[1] if coords else None,
+        })
+    return jsonify(company_list)
+
+
 @app.route("/jobportal")
 def jobportal():
     page = request.args.get("page", 1, type=int)
@@ -215,8 +758,6 @@ def tradevisit(sell_id):
             (today.month, today.day) < (worker.dob.month, worker.dob.day)
         )
 
-    
-
     return render_template(
         "product_view.html",
         sell=sell,
@@ -246,14 +787,13 @@ def jobvisit(job_id):
     )
 
 
-
 from sqlalchemy.exc import SQLAlchemyError
 from flask import abort
 
 @app.route("/application/<int:application_id>/status", methods=["POST"])
 def update_application_status(application_id):
 
-    # 🔐 Only company allowed
+    # Only company allowed
     if session.get("user_type") != "company":
         abort(403)
 
@@ -262,11 +802,11 @@ def update_application_status(application_id):
     application = Application.query.get_or_404(application_id)
     job = application.job
 
-    # 🔐 Ownership check
+    # Ownership check
     if job.company_id != session.get("company_id"):
         abort(403)
 
-    # 🚫 Already processed → STOP
+    # Already processed — STOP
     if application.applicant_status != "pending":
         flash("This application has already been processed.", "warning")
         return redirect(request.referrer)
@@ -274,16 +814,16 @@ def update_application_status(application_id):
     try:
         if new_status == "Accepted":
 
-            # 🚫 No openings left
+            # No openings left
             if job.job_opening_no <= 0:
                 flash("No openings left for this job.", "danger")
                 return redirect(request.referrer)
 
-            # ✅ Accept
+            # Accept
             application.applicant_status = "Accepted"
             job.job_opening_no -= 1
 
-            # 🔒 Auto close job
+            # Auto close job
             if job.job_opening_no == 0:
                 job.status = "Closed"
 
@@ -306,7 +846,7 @@ def update_application_status(application_id):
 @app.route("/company/application/<int:application_id>/delete", methods=["POST"])
 def delete_company_application(application_id):
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     application = Application.query.get_or_404(application_id)
 
@@ -324,7 +864,7 @@ def delete_company_application(application_id):
 def view_trade_applications(sell_id):
 
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     company_id = session.get("company_id")
 
@@ -349,7 +889,7 @@ def view_trade_applications(sell_id):
 @app.route("/company/job/<int:job_id>/applications")
 def view_job_applications(job_id):
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     company_id = session.get("company_id")
 
@@ -372,12 +912,12 @@ def view_job_applications(job_id):
 def workerprofile_public(worker_id):
     # Only company can view worker public profile
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     worker = Worker.query.get_or_404(worker_id)
 
     return render_template(
-        "workerpublic.html",   # the template I gave you earlier
+        "workerpublic.html",
         worker=worker
     )
 
@@ -401,8 +941,6 @@ def trade():
     page = request.args.get("page", 1, type=int)
     per_page = 9
 
-    
-    
     date = request.args.get("date")
     qty = request.args.get("qty")
     price = request.args.get("price")
@@ -436,9 +974,12 @@ def trade():
     )
     for item in pagination.items:
         if item.sell_image:
-            item.images = json.loads(item.sell_image)
+            try:
+                item.images = json.loads(item.sell_image)
+            except Exception:
+                item.images = [item.sell_image]
         else:
-            item.images = [] 
+            item.images = []
     return render_template(
         "trade.html",
         sell_items=pagination.items,
@@ -461,54 +1002,9 @@ def delete_trade(sell_id):
     return redirect(url_for('companyprofile'))
 
 
-@app.route('/login')
-def login():
-    return render_template('login.html')
 
-@app.route("/login/worker", methods=["POST"])
-def login_worker():
-    email = request.form.get("mail")
-    password = request.form.get("password")
 
-    if not email or not password:
-        flash("All fields are required", "error")
-        return redirect(url_for("login"))
 
-    worker = Worker.query.filter_by(email=email).first()
-
-    if not worker or worker.password != password:
-        flash("Invalid phone number or password", "error")
-        return redirect(url_for("login"))
-
-    # ---------- SESSION ----------
-    session.clear()
-    session["worker_id"] = worker.id
-    session["user_type"] = "worker"
-
-    return redirect(url_for("workerprofile"))
-
-@app.route("/login/company", methods=["POST"])
-def login_company():
-    email = request.form.get("email")
-    password = request.form.get("password")
-
-    if not email or not password:
-        flash("All fields are required", "error")
-        return redirect(url_for("login"))
-
-    company = Company.query.filter_by(email=email).first()
-
-    if not company or company.password != password:
-        flash("Invalid email or password", "error")
-        return redirect(url_for("login"))
-
-    session.clear()
-    session["company_id"] = company.id
-    session["user_type"] = "company"
-
-    return redirect(url_for("companyprofile"))
-
-# ======================== WORKER =========================
 @app.route("/signup/worker", methods=["POST"])
 def signup_worker():
     worker = Worker(
@@ -520,13 +1016,13 @@ def signup_worker():
     db.session.commit()
 
     session["worker_id"] = worker.id
-    session["user_type"] = "worker" 
+    session["user_type"] = "worker"
     return redirect(url_for("workerprofile"))
 
 @app.route("/worker-profile")
 def workerprofile():
     if session.get("user_type") != "worker":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     worker_id = session.get('worker_id')
     worker = Worker.query.get(session["worker_id"])
@@ -554,7 +1050,6 @@ def delete_worker_application(app_id):
     if app.worker_id != session.get('worker_id'):
         abort(403)
 
-    # only pending applications can be deleted
     if app.applicant_status != "pending":
         flash("You cannot delete a processed application", "warning")
         return redirect(url_for("workerprofile"))
@@ -563,7 +1058,6 @@ def delete_worker_application(app_id):
     db.session.commit()
     flash("Application deleted", "success")
     return redirect(url_for('workerprofile'))
-
 
 
 @app.route('/application/edit', methods=['POST'])
@@ -578,8 +1072,6 @@ def edit_application():
 
     db.session.commit()
     return redirect(url_for('workerprofile'))
-
-
 
 
 from sqlalchemy.exc import IntegrityError
@@ -619,16 +1111,9 @@ def update_worker_profile():
     if dob:
         worker.dob = datetime.strptime(dob, "%Y-%m-%d").date()
 
-    # sanitize & store
     allowed = {"Hindi", "English", "Marathi"}
     languages = [l for l in languages if l in allowed]
-
     worker.languages = ",".join(languages) if languages else None
-
-
-    db.session.commit()
-    return jsonify(success=True)
-
 
     try:
         db.session.commit()
@@ -642,7 +1127,7 @@ def update_worker_profile():
 def upload_profile_photo():
     worker_id = session.get("worker_id")
     if not worker_id:
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     file = request.files.get("profile_photo")
     if not file or file.filename == "":
@@ -696,7 +1181,6 @@ def upload_worker_documents():
         worker.kyc_status = "submitted"
         session.pop("kyc_started", None)
 
-
     db.session.commit()
     flash("Document uploaded successfully.", "success")
 
@@ -742,7 +1226,7 @@ def add_experience():
 def add_certification():
     worker_id = session.get("worker_id")
     if not worker_id:
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     title = request.form.get("title")
     issuer = request.form.get("issuer")
@@ -800,35 +1284,26 @@ def signup_company():
     if request.method == "GET":
         return render_template("signup.html")
 
-    # ---------- READ FORM DATA ----------
     company_name = request.form.get("company_name")
     email = request.form.get("email")
     password = request.form.get("password")
- 
 
-    # ---------- VALIDATION ----------
-    if not all([
-        email, password, company_name,
-    
-    ]):
+    if not all([email, password, company_name]):
         return "All required fields must be filled", 400
 
-    # ---------- DUPLICATE EMAIL CHECK ----------
     existing_company = Company.query.filter_by(email=email).first()
     if existing_company:
         return "Company already registered with this email", 400
 
-    # ---------- CREATE COMPANY ----------
     company = Company(
         email=email,
-        password=password,  # (hash later)
+        password=password,
         company_name=company_name
     )
 
     db.session.add(company)
     db.session.commit()
 
-    # ---------- SESSION ----------
     session.clear()
     session["company_id"] = company.id
     session["user_type"] = "company"
@@ -838,12 +1313,12 @@ def signup_company():
 @app.route("/company-profile")
 def companyprofile():
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     company = Company.query.get(session["company_id"])
     sell_items = sellitem.query.filter_by(
-    company_id=company.id
-).order_by(sellitem.created_at.desc()).all()
+        company_id=company.id
+    ).order_by(sellitem.created_at.desc()).all()
 
     initial = company.company_name[0].upper() if company.company_name else "U"
 
@@ -858,7 +1333,7 @@ def companyprofile():
 def upload_company_photo():
     company_id = session.get("company_id")
     if not company_id:
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     file = request.files.get("profile_photo")
     if not file or file.filename == "":
@@ -916,7 +1391,7 @@ def update_company_contact():
 @app.route("/company/job", methods=["POST"])
 def create_or_edit_job():
     if session.get("user_type") != "company":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     job_id = request.form.get("job_id")
 
@@ -976,13 +1451,14 @@ def create_or_edit_job():
 
     db.session.commit()
     return redirect(url_for("companyprofile"))
+
 @app.route("/trade/apply", methods=["POST"])
 def apply_trade():
     user_type = session.get("user_type")
 
     if user_type not in ["company", "worker"]:
         flash("Please login to apply for trade", "danger")
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     buyer_id = session.get("worker_id") if user_type == "worker" else session.get("company_id")
 
@@ -1031,7 +1507,7 @@ def apply_trade():
 @app.route("/apply", methods=["POST"])
 def applyjob():
     if session.get("user_type") != "worker":
-        return redirect(url_for("login"))
+        return redirect(url_for('auth_bp.login'))
 
     worker_id = session.get("worker_id")
     worker = Worker.query.get_or_404(worker_id)
@@ -1040,7 +1516,6 @@ def applyjob():
     if not job_id:
         abort(400, "Job ID missing")
 
-    # Prevent duplicate application
     existing = Application.query.filter_by(
         job_id=job_id,
         worker_id=worker_id
@@ -1089,7 +1564,6 @@ def add_selling_item():
         return redirect(url_for("home"))
 
     if request.method == "POST":
-        # ---------- FORM DATA ----------
         sell_name = request.form.get("sell_name")
         sell_category = request.form.get("sell_category")
         sell_quantity_raw = request.form.get("sell_quantity")
@@ -1099,23 +1573,19 @@ def add_selling_item():
 
         files = request.files.getlist("sell_images[]")
 
-        # ---------- VALIDATION ----------
         if not all([sell_name, sell_quantity_raw, sell_price_raw, sell_description]):
             return "All required fields must be filled", 400
 
-        # ---------- CLEAN PRICE ----------
         price_match = re.search(r'[\d.]+', sell_price_raw.replace(',', ''))
         if not price_match:
             return "Invalid price format", 400
         sell_price = float(price_match.group())
 
-        # ---------- CLEAN QUANTITY ----------
         qty_match = re.search(r'\d+', sell_quantity_raw)
         if not qty_match:
             return "Invalid quantity format", 400
         sell_quantity = int(qty_match.group())
 
-        # ---------- SAVE IMAGES ----------
         image_filenames = []
 
         for file in files:
@@ -1127,557 +1597,110 @@ def add_selling_item():
 
         sell_id = request.form.get("sell_id")
         if sell_id:
-        # ===== EDIT JOB =====
-            
             sell = sellitem.query.get(sell_id)
 
-            # 🔐 ownership check (VERY IMPORTANT)
             if sell.company_id != session["company_id"]:
                 abort(403)
-                
+
             sell.sell_name = request.form.get("sell_name") or sell_name
             sell.sell_category = request.form.get("sell_category") or sell_category
             sell.sell_quantity = request.form.get("sell_quantity") or sell_quantity
-            # sell.sell_location = request.form.get("sell_location") or sell_location
             sell.sell_price = request.form.get("sell_price") or sell_price
             sell.sell_description = request.form.get("sell_description") or sell_description
 
         else:
-            # ---------- CREATE DB ENTRY ----------
             sell_item = sellitem(
-                sell_name=sell_name,  
+                sell_name=sell_name,
                 company_id=session["company_id"],
                 sell_category=sell_category or "General",
                 sell_quantity=sell_quantity,
                 sell_price=sell_price,
                 sell_description=sell_description,
-                sell_image=json.dumps(image_filenames),  # ✅ MULTIPLE IMAGES
+                sell_image=json.dumps(image_filenames),
                 created_at=datetime.utcnow()
             )
 
             db.session.add(sell_item)
         db.session.commit()
 
-    
     return redirect(url_for("companyprofile"))
-    
+
 
 @app.route('/signup')
 def signup():
     return render_template("signup.html")
 
 # ===================== LOGOUT =====================
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("home"))
-
-
-# class Worker(db.Model):
-#     __tablename__ = "worker"
-#     id = db.Column(db.Integer, primary_key=True)
-
-#     username = db.Column(db.String(80), unique=True, nullable=False)
-#     password = db.Column(db.String(128), nullable=False)
-#     email = db.Column(db.String(128), unique=True ,nullable=False)
-#     phone_no = db.Column(db.String(20), nullable=False)
-
-#     # KYC documents (post-signup)
-#     aadhar_card = db.Column(db.String(200), nullable=True)
-#     pan_card = db.Column(db.String(200), nullable=True)
-#     resume = db.Column(db.String(200), nullable=True)
-
-#     # KYC workflow
-#     kyc_status = db.Column(
-#         db.String(20),
-#         nullable=False,
-#         default="pending"  
-#         # pending | submitted | verified | rejected
-#     )
-
-#     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-# class Company(db.Model):
-#     __tablename__ = "company"
-
-#     id = db.Column(db.Integer, primary_key=True)
-
-#     # LOGIN CREDENTIALS
-#     email = db.Column(db.String(120), unique=True, nullable=False)
-#     password = db.Column(db.String(128), nullable=False)
-
-#     # COMPANY DETAILS
-#     company_name = db.Column(db.String(120), nullable=False)
-#     company_category = db.Column(db.String(120), nullable=False)
-#     company_location = db.Column(db.String(120), nullable=False)
-#     company_contact = db.Column(db.String(20), nullable=False)
-#     company_address = db.Column(db.String(256), nullable=False)
-#     company_website = db.Column(db.String(120), nullable=True)
-#     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-# class JobPOST(db.Model):
-#     __tablename__ = "job_post"
-
-#     job_id = db.Column(db.Integer, primary_key=True)
-#     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
-
-#     job_title = db.Column(db.String(80), nullable=False)
-#     job_category = db.Column(db.String(128), nullable=False)
-#     job_location = db.Column(db.String(128), nullable=False)
-#     job_specific_location = db.Column(db.String(128), nullable=False)
-#     job_start_time = db.Column(Time, nullable=False) 
-#     job_end_time = db.Column(Time, nullable=False)              ================= job start time and end time ====================
-#     job_opening_no = db.Column(db.Integer , nullable=False)               ================= job openings no ====================
-#     job_experience = db.Column(db.String(128), nullable=False)
-#     job_shift = db.Column(db.String(128), nullable=False)
-#     job_salary = db.Column(db.String(128), nullable=False)
-#     job_contact = db.Column(db.String(128), nullable=False)
-#     job_description = db.Column(db.Text, nullable=False)
-
-#     company = db.relationship('Company', backref='jobs')
-
-
-
-# class Application(db.Model):
-#     application_id = db.Column(db.Integer, primary_key=True)
-#     job_id = db.Column(db.Integer, db.ForeignKey('job_post.job_id'), nullable=False)
-#     applicant_name = db.Column(db.String(80), nullable=False)
-#     applicant_email = db.Column(db.String(120), nullable=False)
-#     applicant_phone = db.Column(db.String(20), nullable=False)
-#     applicant_age = db.Column(db.Integer, nullable=False)
-#     applicant_gender = db.Column(db.String(20), nullable=False)
-#     applicant_skill = db.Column(db.String(120), nullable=False)
-#     applicant_experience = db.Column(db.String(120), nullable=False)
-#     applicant_expected_salary = db.Column(db.String(120), nullable=False)
-#     applicant_location = db.Column(db.String(120), nullable=False)
-#     applicant_preferred_shift = db.Column(db.String(120), nullable=False)
-#     applicant_status = db.Column(db.String(20), nullable=False, default="pending")
-#     application_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-#     worker_id = db.Column(db.Integer, db.ForeignKey("worker.id"), nullable=False)
-
-#     aadhar_card = db.Column(db.String(200), nullable=True)
-#     pan_card = db.Column(db.String(200), nullable=True)
-#     resume = db.Column(db.String(200), nullable=True)
-
-#   # Link to user who applied
-
-#     # Relationship to JobPOST
-#     job = db.relationship('JobPOST', backref='applications')
-
-#     def __repr__(self):
-#         return f"<Application {self.applicant_name} for Job {self.job_id}>"
-
-# class sellitem(db.Model):
-#     __tablename__ = 'sell_item'
-#     sell_id = db.Column(db.Integer, primary_key=True)
-#     sell_name = db.Column(db.String(80), nullable=False)
-#     sell_price = db.Column(db.Float, nullable=False)
-#     sell_quantity = db.Column(db.Integer, nullable=False)
-#     sell_description = db.Column(db.Text, nullable=False)
-#     sell_image = db.Column(db.String(200), nullable=True)  # Made optional for now
-#     sell_status = db.Column(db.String(20), nullable=False, default="available")
-#     sell_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-#     posted_by = db.Column(db.String(80), nullable=False)  # Store business username/email
-#     sell_category = db.Column(db.String(80), nullable=True)  # Category field
-#     sell_location = db.Column(db.String(128), nullable=True)  # Location field
-
-#     def __repr__(self):
-#         return f"<sellitem {self.sell_name} - ₹{self.sell_price}>"
-
-
-# class buyitem(db.Model):
-#     __tablename__ = 'buy_item'
-#     buy_id = db.Column(db.Integer, primary_key=True)
-#     buy_name = db.Column(db.String(80), nullable=False)
-#     buy_budget = db.Column(db.Float, nullable=True)  # Optional budget
-#     buy_quantity = db.Column(db.Integer, nullable=False)
-#     buy_description = db.Column(db.Text, nullable=False)
-#     buy_image = db.Column(db.String(200), nullable=True)  # Optional image URL
-#     buy_status = db.Column(db.String(20), nullable=False, default="open")
-#     buy_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-#     posted_by = db.Column(db.String(80), nullable=False)  # Store business username/email
-#     buy_category = db.Column(db.String(80), nullable=True)  # Category field
-#     buy_location = db.Column(db.String(128), nullable=True)  # Location field
-
-#     def __repr__(self):
-#         return f"<buyitem {self.buy_name} - Budget: ₹{self.buy_budget if self.buy_budget else 'Negotiable'}>"
-
-    
-# ===================== HOME =====================
-# @app.route("/")
-# def home():
-#     # Always show home page; user can choose where to go next
-#     return render_template("home.html")
-
-
-# @app.route("/index")
-# def index():
-#     # Legacy route used by old template; just reuse home page
-#     return redirect(url_for("home"))
-
-# @app.route("/dashboard")
-# def dashboard():
-#     if session.get("user_type") == "worker":
-#         return redirect(url_for("workerprofile"))
-
-#     if session.get("user_type") == "company":
-#         return redirect(url_for("companyprofile"))
-
-#     return redirect(url_for("logintype"))
-
-
-
-
-# @app.route("/jobportal")
-# def jobportal():
-#     role = session.get("user_type") 
-
-
-#     # If not logged in at all, send to login type selector page
-#     if role is None:
-#         return redirect(url_for("logintype"))
-
-#     # Only normal users can see the job portal
-#     if role != "worker":
-#         return redirect(url_for("dashboard"))
-
-#     # Fetch all jobs from database
-#     jobs = JobPOST.query.all()
-#     return render_template("job-portal.html", jobs=jobs)
-
-# # ===================== BUSINESS ROUTES =====================
-# @app.route("/companyprofile")
-# def companyprofile():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("login"))
-
-#     company = Company.query.get(session["company_id"])
-
-#     jobs = JobPOST.query.filter_by(company_id=company.id).all()
-#     sell_items = sellitem.query.filter_by(
-#         posted_by=company.email
-#     ).order_by(sellitem.sell_date.desc()).all()
-
-#     buy_items = buyitem.query.filter_by(
-#         posted_by=company.email
-#     ).order_by(buyitem.buy_date.desc()).all()
-
-    
-#     total_b2b_listings = len(sell_items) + len(buy_items)
-
-#     return render_template(
-#         "company-profile.html",
-#         company=company,
-#         jobs=jobs,
-#         sell_items=sell_items,
-#         buy_items=buy_items,
-#         total_jobs_posted=len(jobs),
-#         total_b2b_listings=total_b2b_listings
-#     )
-
-# @app.route("/company/update-profile", methods=["POST"])
-# def update_company_profile():
-#     if session.get("user_type") != "company":
-#         return jsonify(success=False, message="Not logged in")
-
-#     company = Company.query.get(session["company_id"])
-#     if not company:
-#         return jsonify(success=False, message="Company not found")
-
-#     data = request.get_json()
-
-#     company.company_name = data.get("company_name", company.company_name)
-#     company.company_contact = data.get("company_contact", company.company_contact)
-#     company.company_website = data.get("company_website", company.company_website)
-#     company.company_address = data.get("company_address", company.company_address)
-#     company.company_location = data.get("company_location", company.company_location)
-
-#     db.session.commit()
-
-#     return jsonify(
-#         success=True,
-#         company_name=company.company_name,
-#         company_contact=company.company_contact,
-#         company_website=company.company_website,
-#         company_address=company.company_address,
-#         company_location=company.company_location
-#     )
-
-
-# @app.route("/jobpost", methods=["GET", "POST"])
-# def jobpost():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("login"))
-
-#     if request.method == "POST":
-#         job = JobPOST(
-#             company_id=session["company_id"],
-#             job_title=request.form.get("job_title"),
-#             job_category=request.form.get("job_category"),
-#             job_location=request.form.get("job_location"),
-#             job_specific_location=request.form.get("job_specific_location"),
-#             job_experience=request.form.get("job_experience"),
-#             job_shift=request.form.get("job_shift"),
-#             job_salary=request.form.get("job_salary"),
-#             job_contact=request.form.get("job_contact"),
-#             job_description=request.form.get("job_description"),
-#         )
-
-#         db.session.add(job)
-#         db.session.commit()
-#         return redirect(url_for("companyprofile"))
-
-#     return render_template("post-job.html")
-
-
-
-# @app.route("/application")
-# def application():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("dashboard"))
-
-#     job_id = request.args.get("job_id")
-#     company_id = session["company_id"]
-
-#     # All jobs posted by this company
-#     business_jobs = JobPOST.query.filter_by(company_id=company_id).all()
-
-#     if job_id:
-#         job = JobPOST.query.get(job_id)
-
-#         # ✅ FIX: check ownership using company_id
-#         if not job or job.company_id != company_id:
-#             return "Job not found or unauthorized", 404
-
-#         applications = Application.query.filter_by(job_id=job_id).order_by(
-#             Application.application_date.desc()
-#         ).all()
-
-#         return render_template(
-#             "view-applications.html",
-#             applications=applications,
-#             job=job,
-#             all_jobs=business_jobs
-#         )
-
-#     # ---------- SHOW ALL APPLICATIONS ----------
-#     if business_jobs:
-#         job_ids = [job.job_id for job in business_jobs]
-#         applications = Application.query.filter(
-#             Application.job_id.in_(job_ids)
-#         ).order_by(Application.application_date.desc()).all()
-#     else:
-#         applications = []
-
-#     return render_template(
-#         "view-applications.html",
-#         applications=applications,
-#         job=None,
-#         all_jobs=business_jobs
-#     )
-
-# @app.route("/company/update-application-status", methods=["POST"])
-# def update_application_status():
-#     if session.get("user_type") != "company":
-#         return jsonify(success=False, message="Unauthorized")
-
-#     data = request.get_json()
-#     app_id = data.get("application_id")
-#     status = data.get("status")
-
-#     if status not in ["selected", "rejected"]:
-#         return jsonify(success=False, message="Invalid status")
-
-#     application = Application.query.get(app_id)
-#     if not application:
-#         return jsonify(success=False, message="Application not found")
-
-#     application.applicant_status = status
-#     db.session.commit()
-
-#     return jsonify(success=True)
-
-
-# @app.route("/cancel_application/<int:app_id>", methods=["POST"])
-# def cancel_application(app_id):
-#     if session.get("user_type") != "worker":
-#         return redirect(url_for("dashboard"))
-
-#     application = Application.query.get_or_404(app_id)
-
-
-#     # Only allow cancel if pending
-#     if application.applicant_status != "pending":
-#         return "Cannot cancel this application", 400
-
-#     db.session.delete(application)
-#     db.session.commit()
-
-#     return redirect(url_for("workerprofile"))
-
-
-# # ===================== B2B (OPTIONAL BUSINESS PAGES) =====================
-# @app.route("/homeb2b")
-# def b2bhome():
-#     role = session.get("user_type")
-
-#     # If not logged in at all, send to login type selector page
-#     if role is None:
-#         return redirect(url_for("logintype"))
-
-#     if role != "company":
-#         return redirect(url_for("dashboard"))
-
-#     return render_template("b2b-home.html")
-
-
-# @app.route("/b2bsell", methods=["GET", "POST"])
-# def b2bpost():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("dashboard"))
-
-#     if request.method == "POST":
-#         sell_name = request.form.get("sell_name")
-#         sell_category = request.form.get("sell_category")
-#         sell_quantity_raw = request.form.get("sell_quantity")
-#         sell_location = request.form.get("sell_location")
-#         sell_price_raw = request.form.get("sell_price")
-#         sell_description = request.form.get("sell_description")
-#         sell_image = request.form.get("sell_image")
-
-#         # ---------- VALIDATION ----------
-#         if not all([sell_name, sell_quantity_raw, sell_price_raw, sell_description]):
-#             return "All required fields must be filled", 400
-
-#         # ---------- PRICE CLEAN ----------
-#         price_match = re.search(r'[\d.]+', sell_price_raw.replace(',', ''))
-#         if not price_match:
-#             return "Invalid price format", 400
-#         sell_price = float(price_match.group())
-
-#         # ---------- QUANTITY CLEAN ----------
-#         qty_match = re.search(r'\d+', sell_quantity_raw)
-#         if not qty_match:
-#             return "Invalid quantity format", 400
-#         sell_quantity = int(qty_match.group())
-
-#         # ---------- CREATE SELL ITEM ----------
-#         sell_item = sellitem(
-#             sell_name=sell_name,
-#             sell_category=sell_category or "General",
-#             sell_quantity=sell_quantity,
-#             sell_location=sell_location or "Not specified",
-#             sell_price=sell_price,
-#             sell_description=sell_description,
-#             sell_image=sell_image,
-#             sell_status="available",
-#             posted_by=Company.query.get(session["company_id"]).email
-#         )
-
-#         db.session.add(sell_item)
-#         db.session.commit()
-
-#         return redirect(url_for("companyprofile"))
-
-#     return render_template("b2b-post.html")
-
-
-# @app.route("/b2bbuy")
-# def buyerlist():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("dashboard"))
-
-#     # Fetch all available sell items
-#     sell_items = sellitem.query.filter_by(sell_status="available").order_by(
-#         sellitem.sell_date.desc()
-#     ).all()
-
-#     # Fetch all open buy requirements
-#     buy_items = buyitem.query.filter_by(buy_status="open").order_by(
-#         buyitem.buy_date.desc()
-#     ).all()
-
-#     return render_template("buyer-list.html", sell_items=sell_items, buy_items=buy_items)
-
-
-# @app.route("/hostseller", methods=["GET", "POST"])
-# def hostseller():
-#     if session.get("user_type") != "company":
-#         return redirect(url_for("dashboard"))
-
-#     if request.method == "POST":
-#         # Get form data for buy requirement
-#         buy_name = request.form.get("buy_name")
-#         buy_category = request.form.get("buy_category")
-#         buy_quantity = request.form.get("buy_quantity")
-#         buy_location = request.form.get("buy_location")
-#         buy_budget = request.form.get("buy_budget", "")
-#         buy_description = request.form.get("buy_description")
-#         buy_image = request.form.get("buy_image", "")  # Optional image URL
-
-#         # Validate required fields
-#         if not all([buy_name, buy_quantity, buy_description]):
-#             return "Name, quantity, and description are required", 400
-
-#         try:
-#             # Convert quantity - extract number from string
-#             quantity_match = re.search(r'\d+', buy_quantity)
-#             if quantity_match:
-#                 quantity_int = int(quantity_match.group())
-#             else:
-#                 return "Invalid quantity format. Please enter a number.", 400
-
-#             # Convert budget if provided
-#             budget_float = None
-#             if buy_budget and buy_budget.strip().lower() not in ['negotiable', 'na', '']:
-#                 budget_str = buy_budget.replace('₹', '').replace(',', '').replace(' ', '').strip()
-#                 budget_match = re.search(r'[\d.]+', budget_str)
-#                 if budget_match:
-#                     budget_float = float(budget_match.group())
-
-#         except (ValueError, AttributeError):
-#             return "Invalid quantity or budget format", 400
-
-#         # Create new buy item
-#         buy_item = buyitem(
-#             buy_name=buy_name,
-#             buy_category=buy_category or "General",
-#             buy_quantity=quantity_int,
-#             buy_location=buy_location or "Not specified",
-#             buy_budget=budget_float,
-#             buy_description=buy_description,
-#             buy_image=buy_image,
-#             posted_by=session.get("user", "unknown")
-#         )
-
-#         db.session.add(buy_item)
-#         db.session.commit()
-
-#         # Redirect to B2B home with success
-#         return redirect(url_for("b2bhome"))
-
-#     return render_template("seller-host.html")
-
-
-# # ===================== LOGOUT =====================
-# @app.route("/logout")
-# def logout():
-#     session.clear()
-#     return redirect(url_for("home"))
-
 
 # ===================== DATABASE INITIALIZATION =====================
-# Create all database tables if they don't exist
 with app.app_context():
     db.create_all()
     print("Database tables created/verified successfully!")
 
+@app.route("/api/map/external-jobs")
+def api_map_external_jobs():
+    """
+    Serve Adzuna jobs from DB
+    """
+    skip_radius  = request.args.get("skip_radius", "0") == "1"
+    user_keyword = request.args.get("q", "").strip().lower()
 
-# # ===================== RUN =====================
-# if __name__ == "__main__":
-#     app.run(debug=False, host='0.0.0.0', port=5000)
+    # Only parse location if radius filtering is needed
+    user_lat, user_lng, radius_km = 18.5204, 73.8567, 60.0
+    filter_by_location = False
+    if not skip_radius:
+        try:
+            user_lat  = float(request.args.get("lat"))
+            user_lng  = float(request.args.get("lng"))
+            radius_km = float(request.args.get("radius", 60000)) / 1000
+            filter_by_location = True
+        except (TypeError, ValueError):
+            filter_by_location = False
 
+    jobs_query = AdzunaJob.query.filter_by(active=True)
+    all_jobs = jobs_query.all()
+
+    job_list = []
+    for job in all_jobs:
+        if user_keyword:
+            text = f"{job.title} {job.company_name} {job.location_display} {job.description}".lower()
+            if not all(w in text for w in user_keyword.split()):
+                continue
+
+        if filter_by_location and job.latitude and job.longitude:
+            dist = haversine_km(user_lat, user_lng, job.latitude, job.longitude)
+            if dist > radius_km:
+                continue
+
+        # Re-use existing format for frontend map markers
+        job_list.append({
+            "id": job.id,
+            "title": job.title,
+            "company": job.company_name,
+            "city": job.location_display,
+            "location": job.location_area,
+            "salary": f"₹{job.salary_min}-{job.salary_max}" if job.salary_min else "Not disclosed",
+            "type": job.contract_type or "Full-time",
+            "shift": "",
+            "description": (job.description or "")[:200],
+            "source": "adzuna",
+            "url": job.redirect_url,
+            "lat": job.latitude,
+            "lng": job.longitude,
+        })
+
+    return jsonify(job_list)
+
+
+@app.route("/api/scraper/status")
+def scraper_status():
+    """Returns DB info."""
+    count = AdzunaJob.query.filter_by(active=True).count()
+    return jsonify({
+        "cached_jobs": count,
+        "last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "cache_file": "db",
+    })
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)

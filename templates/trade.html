@@ -35,12 +35,12 @@
     <div class="auth">
       {% if session.get('user_type') == 'worker' %}
         <a href="{{ url_for('workerprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
-      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      <a href="{{ url_for('auth_bp.logout') }}" class="signup">Logout</a>
       {% elif session.get('user_type') == 'company' %}
       <a href="{{ url_for('companyprofile') }}" class="profile"> <i class='fa-solid fa-user'></i> My profile</a>
-      <a href="{{ url_for('logout') }}" class="signup">Logout</a>
+      <a href="{{ url_for('auth_bp.logout') }}" class="signup">Logout</a>
       {% else %}
-      <a href="{{ url_for('login') }}" class="signup">Login</a>
+      <a href="{{ url_for('auth_bp.login') }}" class="signup">Login</a>
       {% endif %}
     </div>
   </header>
@@ -252,7 +252,7 @@
 
     <div class="cta-buttons">
       <a href="{{ url_for('signup')}}" class="cta-btn primary">Register as a Supplier</a>
-      <a href="{{ url_for('login')}}" class="cta-btn secondary">Supplier Login</a>
+      <a href="{{ url_for('auth_bp.login')}}" class="cta-btn secondary">Supplier Login</a>
     </div>
   </section>
 
@@ -266,17 +266,17 @@
           </div>
           <div class="footer-section">
               <h4>Quick Links</h4>
-              <a href="home.html">Home</a>
-              <a href="job-portal.html">Find Jobs</a>
-              <a href="industry-map.html">Industry Map</a>
-              <a href="b2btrade.html">B2B Trade</a>
+              <a href="{{ url_for('home') }}">Home</a>
+              <a href="{{ url_for('jobportal') }}">Find Jobs</a>
+              <a href="{{ url_for('industrymap') }}">Industry Map</a>
+              <a href="{{ url_for('trade') }}">B2B Trade</a>
           </div>
           <div class="footer-section">
               <h4>Support</h4>
-              <a href="#">Help Center</a>
-              <a href="#">Contact Us</a>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Service</a>
+              <a href="{{ url_for('support') }}">Help Center</a>
+              <a href="{{ url_for('support') }}">Contact Us</a>
+              <a href="{{ url_for('support') }}">Privacy Policy</a>
+              <a href="{{ url_for('support') }}">Terms of Service</a>
           </div>
       </div>
   </footer>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IndusTech | Support</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+  <style>
+    .support-container {
+        max-width: 800px;
+        margin: 100px auto;
+        padding: 40px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .support-container h1 {
+        color: var(--primary-blue);
+        margin-bottom: 20px;
+    }
+    .support-container p {
+        color: #555;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+    .contact-info {
+        margin-top: 30px;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+    .contact-info a {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--primary-blue);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    .contact-info a:hover {
+        background: var(--primary-orange);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<header class="navbar">
+  <div class="logo">
+    <i class="fa-solid fa-industry"></i>
+    <div>
+      <strong>IndusTech</strong><br>
+      <small>Industrial Ecosystem</small>
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <a href="{{ url_for('home') }}"> <i class="fa-solid fa-house"></i> Home</a>
+    <a href="{{url_for('industrymap') }}">  <i class="fa-solid fa-location-dot"></i> Industrial Map</a>
+    <a href="{{url_for('jobportal')}}"> <i class="fa-solid fa-briefcase"></i> Job Portal</a>
+    <a href="{{url_for('trade') }}"> <i class="fa-solid fa-box"></i> B2B Trade</a>
+  </nav>
+
+  <div class="auth">
+    <a href="{{ url_for('auth_bp.login') }}" class="signup">Login</a>
+  </div>
+</header>
+
+<div class="support-container">
+    <h1>Support & Legal</h1>
+    <p>If you need help or have any questions, please reach out to our support team.</p>
+    <div class="contact-info">
+        <a href="mailto:support@industech.com"><i class="fas fa-envelope"></i> Email Support</a>
+        <a href="{{ url_for('home') }}">Return Home</a>
+    </div>
+</div>
+
+</body>
+</html>
